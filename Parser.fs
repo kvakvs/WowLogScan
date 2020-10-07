@@ -4,9 +4,7 @@ open System
 open WowLogScan
 
 module Parser =
-  open LogEntity
-
-  let file = @"WoWCombatLog.txt"
+  open EventLog
 
   type LogLine = { Time: DateTime; Values: string [] }
 
@@ -17,7 +15,7 @@ module Parser =
   //  (18812,71,(1886,0,0),(),()),(16863,66,(1887,0,0),(),()),(19384,83,(),(),()),(19925,68,(),(),()),
   //  (18406,74,(),(),()),(19431,75,(),(),()),(19907,68,(849,0,0),(),()),(19351,75,(1900,564,0),(),()),
   //  (18168,65,(929,0,0),(),()),(17069,69,(),(),()),(0,0,(),(),())],[]
-  let parseCombatantInfoLogLine (line: string): string [] = line.Split([|','|], 26)
+  let parseCombatantInfoLogLine (line: string): string [] = line.Split([| ',' |], 26)
 
   // Parse data section of the event line, which looks like CSV
   // Most events need just comma split, but COMBATANT_INFO is special
@@ -31,7 +29,7 @@ module Parser =
     let fields: string [] = line.Split([| ' ' |], 4)
 
     // there is double space after the time, so fields[2] is "" skip it
-    let values: string [] = parseLineFields(fields.[0], fields.[3])
+    let values: string [] = parseLineFields (fields.[0], fields.[3])
 
     { LogLine.Time = DateTime.Parse(fields.[0] + "/2020 " + fields.[1])
       LogLine.Values = values }
@@ -60,8 +58,53 @@ module Parser =
     | "0000000000000000" -> Ability.Melee
     | _ -> Ability.Spell s
 
+  let (|Prefix|_|) (p: string) (s: string) =
+    if s.StartsWith(p) then Some(s.Substring(p.Length)) else None
+
+  let parseSpellPrefix (s: string): SpellPrefix =
+    match s with
+    | Prefix "SPELL_PERIODIC_" _ -> SpellPrefix.SpellPeriodic
+    | Prefix "SPELL_" _ -> SpellPrefix.Spell
+    | Prefix "RANGE_" _ -> SpellPrefix.Range
+    | Prefix "SWING_" _ -> SpellPrefix.Swing
+    | Prefix "ENVIRONMENTAL_" _ -> SpellPrefix.Environmental
+    | Prefix "DAMAGE_SHIELD" _ -> SpellPrefix.DamageShield
+    | _ -> SpellPrefix.NotRecognizedPrefix s
+
+  let parseSpellSuffix (s: string): SpellSuffix =
+    match s with
+    | s when s.EndsWith("_DAMAGE") -> SpellSuffix.Damage
+    | s when s.EndsWith("DAMAGE_SHIELD") -> SpellSuffix.DamageShield
+    | s when s.EndsWith("_DAMAGE_LANDED") -> SpellSuffix.DamageLanded
+    | s when s.EndsWith("_HEAL") -> SpellSuffix.Heal
+    | s when s.EndsWith("_HEAL_ABSORBED") -> SpellSuffix.HealAbsorbed
+    | s when s.EndsWith("_LEECH") -> SpellSuffix.Leech
+    | s when s.EndsWith("_DRAIN") -> SpellSuffix.Drain
+    | s when s.EndsWith("_ENERGIZE") -> SpellSuffix.Energize
+    | s when s.EndsWith("_MISSED") -> SpellSuffix.Missed
+    | s when s.EndsWith("_ABSORBED") -> SpellSuffix.Absorbed
+    | s when s.EndsWith("_EXTRA_ATTACKS") -> SpellSuffix.ExtraAttacks
+    | s when s.EndsWith("_AURA_APPLIED") -> SpellSuffix.AuraApplied
+    | s when s.EndsWith("_AURA_REMOVED") -> SpellSuffix.AuraRemoved
+    | s when s.EndsWith("_AURA_APPLIED_DOSE") -> SpellSuffix.AuraAppliedDose
+    | s when s.EndsWith("_AURA_REMOVED_DOSE") -> SpellSuffix.AuraRemovedDose
+    | s when s.EndsWith("_AURA_REFRESH") -> SpellSuffix.AuraRefresh
+    | s when s.EndsWith("_AURA_BROKEN") -> SpellSuffix.AuraBroken
+    | s when s.EndsWith("_AURA_BROKEN_SPELL") -> SpellSuffix.AuraBrokenSpell
+    | s when s.EndsWith("_INTERRUPT") -> SpellSuffix.Interrupt
+    | s when s.EndsWith("_CREATE") -> SpellSuffix.Create
+    | s when s.EndsWith("_INSTAKILL") -> SpellSuffix.Instakill
+    | s when s.EndsWith("_CAST_START") -> SpellSuffix.CastStart
+    | s when s.EndsWith("_CAST_SUCCESS") -> SpellSuffix.CastSuccess
+    | s when s.EndsWith("_CAST_FAILED") -> SpellSuffix.CastFailed
+    | s when s.EndsWith("_SUMMON") -> SpellSuffix.Summon
+    | s when s.EndsWith("_RESURRECT") -> SpellSuffix.Resurrect
+    | _ -> SpellSuffix.NotRecognizedSuffix s
+
   let parseTargetedSpell (v: string []): TargetedSpell =
-    { Who = createUnit v.[2]
+    { Prefix = parseSpellPrefix v.[0]
+      Suffix = parseSpellSuffix v.[0]
+      Who = createUnit v.[2]
       Target = createUnit v.[6]
       Spell = createSpell v.[10]
       IsBuff = parseBuffDebuff (v, 12) }
@@ -83,66 +126,47 @@ module Parser =
       Difficulty = createDifficulty (v.[3] |> int)
       GroupSize = v.[4] |> int }
 
-  let createEvent (ev: LogLine): Event =
-    let v =
-      Array.map (fun (s: string) -> s.Trim('"')) ev.Values
-
+  let createOtherEvent (v: string[]): Event =
     match v.[0] with
     | "COMBAT_LOG_VERSION" -> Event.CombatLogVersion
 
-    | "SPELL_AURA_APPLIED" -> Event.SpellAuraApplied(parseTargetedSpell v)
-    | "SPELL_AURA_REMOVED" -> Event.SpellAuraRemoved(parseTargetedSpell v)
-    | "SPELL_AURA_APPLIED_DOSE" -> Event.SpellAuraApplied(parseTargetedSpell v)
-    | "SPELL_AURA_REMOVED_DOSE" -> Event.SpellAuraRemoved(parseTargetedSpell v)
-    | "SPELL_AURA_REFRESH" -> Event.SpellAuraRefresh(parseTargetedSpell v)
-    
-    | "SPELL_AURA_BROKEN" -> Event.SpellAuraBroken(parseTargetedSpell v)
-    | "SPELL_AURA_BROKEN_SPELL" -> Event.SpellAuraBrokenSpell(parseTargetedSpell v)
-    | "SPELL_INTERRUPT" -> Event.SpellInterrupt(parseTargetedSpell v) // kick
-    | "SPELL_CREATE" -> Event.SpellCreate(parseTargetedSpell v)
-    | "SPELL_INSTAKILL" -> Event.SpellInstakill(parseTargetedSpell v)
-    | "SPELL_LEECH" -> Event.SpellLeech(parseTargetedSpell v)
-    | "SPELL_PERIODIC_LEECH" -> Event.SpellPeriodicLeech(parseTargetedSpell v)
-    | "SPELL_DRAIN" -> Event.SpellDrain(parseTargetedSpell v)
-    | "SPELL_PERIODIC_DRAIN" -> Event.SpellPeriodicDrain(parseTargetedSpell v)
-    
-    | "SPELL_CAST_SUCCESS" -> Event.SpellCastSuccess(parseTargetedSpell v)
-    | "SPELL_CAST_START" -> Event.SpellCastStart(parseTargetedSpell v)
-    | "SPELL_CAST_FAILED" -> Event.SpellCastFailed(parseTargetedSpell v)
-    | "SPELL_HEAL" -> Event.SpellHeal(parseTargetedSpell v)
-    | "SPELL_PERIODIC_HEAL" -> Event.SpellPeriodicHeal(parseTargetedSpell v)
-    | "SPELL_DAMAGE" -> Event.SpellDamage(parseTargetedSpell v)
-    | "SPELL_MISSED" -> Event.SpellMissed(parseTargetedSpell v)
-    | "SPELL_PERIODIC_DAMAGE" -> Event.SpellPeriodicDamage(parseTargetedSpell v)
-    | "SPELL_PERIODIC_MISSED" -> Event.SpellPeriodicMissed(parseTargetedSpell v)
-    | "SPELL_ABSORBED" -> Event.SpellAbsorbed(parseTargetedSpell v)
-    | "SPELL_EXTRA_ATTACKS" -> Event.SpellExtraAttacks(parseTargetedSpell v)
-    | "SPELL_ENERGIZE" -> Event.SpellPeriodicDamage(parseTargetedSpell v)
-    | "SPELL_PERIODIC_ENERGIZE" -> Event.SpellPeriodicDamage(parseTargetedSpell v)
+    //    | "SPELL_CAST_SUCCESS" -> Event.SpellCastSuccess(parseTargetedSpell v)
+//    | "SPELL_CAST_START" -> Event.SpellCastStart(parseTargetedSpell v)
+//    | "SPELL_CAST_FAILED" -> Event.SpellCastFailed(parseTargetedSpell v)
+//    | "SPELL_HEAL" -> Event.SpellHeal(parseTargetedSpell v)
+//    | "SPELL_PERIODIC_HEAL" -> Event.SpellPeriodicHeal(parseTargetedSpell v)
+//    | "SPELL_DAMAGE" -> Event.SpellDamage(parseTargetedSpell v)
+//    | "SPELL_MISSED" -> Event.SpellMissed(parseTargetedSpell v)
+//    | "SPELL_PERIODIC_DAMAGE" -> Event.SpellPeriodicDamage(parseTargetedSpell v)
+//    | "SPELL_PERIODIC_MISSED" -> Event.SpellPeriodicMissed(parseTargetedSpell v)
+//    | "SPELL_ABSORBED" -> Event.SpellAbsorbed(parseTargetedSpell v)
+//    | "SPELL_EXTRA_ATTACKS" -> Event.SpellExtraAttacks(parseTargetedSpell v)
+//    | "SPELL_ENERGIZE" -> Event.SpellPeriodicDamage(parseTargetedSpell v)
+//    | "SPELL_PERIODIC_ENERGIZE" -> Event.SpellPeriodicDamage(parseTargetedSpell v)
     | "SPELL_DISPEL" ->
         Event.SpellDispel
           { Who = createUnit v.[2]
             Target = createUnit v.[6]
             SpellName = v.[10]
             RemovedSpell = v.[13] }
-    | "SPELL_SUMMON" -> Event.SpellSummon(parseTargetedSpell v)
-    | "DAMAGE_SHIELD" -> Event.DamageShield(parseTargetedSpell v)
-    | "DAMAGE_SHIELD_MISSED" -> Event.DamageShieldMissed(parseTargetedSpell v)
-    | "SPELL_RESURRECT" -> Event.SpellResurrect(parseTargetedSpell v)
+    //    | "SPELL_SUMMON" -> Event.SpellSummon(parseTargetedSpell v)
+//    | "DAMAGE_SHIELD" -> Event.DamageShield(parseTargetedSpell v)
+//    | "DAMAGE_SHIELD_MISSED" -> Event.DamageShieldMissed(parseTargetedSpell v)
+//    | "SPELL_RESURRECT" -> Event.SpellResurrect(parseTargetedSpell v)
 
-    | "RANGE_DAMAGE" -> Event.RangeDamage(parseTargetedSpell v)
-    | "RANGE_MISSED" -> Event.RangeDamage(parseTargetedSpell v)
+    //    | "RANGE_DAMAGE" -> Event.RangeDamage(parseTargetedSpell v)
+//    | "RANGE_MISSED" -> Event.RangeDamage(parseTargetedSpell v)
 
-    | "SWING_DAMAGE" -> Event.SwingDamage(parseTargetedSpell v)
-    | "SWING_DAMAGE_LANDED" -> Event.SwingDamageLanded(parseTargetedSpell v)
-    | "SWING_DAMAGE_MISSED" -> Event.SwingDamageMissed(parseTargetedSpell v)
-    | "SWING_MISSED" -> Event.SwingDamageMissed(parseTargetedSpell v)
+    //    | "SWING_DAMAGE" -> Event.SwingDamage(parseTargetedSpell v)
+//    | "SWING_DAMAGE_LANDED" -> Event.SwingDamageLanded(parseTargetedSpell v)
+//    | "SWING_DAMAGE_MISSED" -> Event.SwingDamageMissed(parseTargetedSpell v)
+//    | "SWING_MISSED" -> Event.SwingDamageMissed(parseTargetedSpell v)
 
     | "ENCHANT_APPLIED" -> Event.EnchantApplied(parseEnchantSpell v)
     | "ENCHANT_REMOVED" -> Event.EnchantRemoved(parseEnchantSpell v)
     | "SPELL_DURABILITY_DAMAGE" -> Event.SpellDurabilityDamage(parseEnchantSpell v)
 
-    | "ENVIRONMENTAL_DAMAGE" -> Event.EnvironmentalDamage(parseTargetedSpell v)
+//    | "ENVIRONMENTAL_DAMAGE" -> Event.EnvironmentalDamage(parseTargetedSpell v)
     | "UNIT_DESTROYED" -> Event.UnitDestroyed(createUnit v.[6])
     | "UNIT_DIED" -> Event.UnitDestroyed(createUnit v.[6])
     | "PARTY_KILL" ->
@@ -155,25 +179,17 @@ module Parser =
 
     | other -> Event.NotSupported other
 
-  let readLogLines (indexFrom: int, indexTo: int): Event list =
-    System.IO.File.ReadAllLines(file).[indexFrom..indexTo]
+  let createEvent (ev: LogLine): Event =
+    let v =
+      Array.map (fun (s: string) -> s.Trim('"')) ev.Values
+
+    match (parseSpellPrefix v.[0]) with
+      | SpellPrefix.NotRecognizedPrefix _ -> createOtherEvent v
+      | _ -> Event.Spell(parseTargetedSpell v)
+
+  let readLogLines (filename: string): Event list =
+    System.IO.File.ReadAllLines(filename)
+      // .[indexFrom..indexTo]
     |> Array.toList
     |> List.map parseLine
     |> List.map createEvent
-
-//  let countFailed allLines =
-//    let rec readLines (myLines: string list) resultItem resultdata =
-//      match myLines with
-//      | h :: t when h.Contains("==") ->
-//          let myItem = h.Substring(3, h.Length - 6)
-//          readLines t (myItem :: resultItem) resultdata
-//      | total :: state :: t when total.Contains("Total:")
-//                                 && state.StartsWith("Failed") ->
-//          let info =
-//            (List.head resultItem), total.Substring(7) //, state ...etc information
-//
-//          readLines t resultItem (info :: resultdata)
-//      | h :: t -> readLines t resultItem resultdata
-//      | [] -> resultdata
-//
-//    readLines (allLines) [] []

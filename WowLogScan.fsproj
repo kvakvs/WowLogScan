@@ -43,8 +43,11 @@
     </ItemGroup>
     <ItemGroup>
         <Compile Include="AssemblyInfo.fs" />
-        <Compile Include="LogEntity.fs" />
+        <Compile Include="EventLog.fs" />
         <Compile Include="Parser.fs" />
+        <Compile Include="RaidState.fs" />
+        <Compile Include="ScanBuffs.fs" />
+        <Compile Include="ScanUnits.fs" />
         <Compile Include="Program.fs" />
         <Content Include="packages.config" />
     </ItemGroup>
