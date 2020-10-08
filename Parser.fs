@@ -5,8 +5,7 @@ open WowLogScan
 
 module Parser =
   open EventLog
-
-  type LogLine = { Time: DateTime; Values: string [] }
+  open Model.Unit
 
   // 9/17 23:45:46.226  COMBATANT_INFO,
   // Player-4678-01668776,357,176,508,74,99,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,8236,0,(),(0,0,0,0),[],
@@ -31,19 +30,12 @@ module Parser =
     // there is double space after the time, so fields[2] is "" skip it
     let values: string [] = parseLineFields (fields.[0], fields.[3])
 
+    // Trim "quotation" marks from all strings
+    let trimmedValue =
+      Array.map (fun (s: string) -> s.Trim('"')) values
+
     { LogLine.Time = DateTime.Parse(fields.[0] + "/2020 " + fields.[1])
-      LogLine.Values = values }
-
-  let REALM_NAME = @"HydraxianWaterlords"
-
-  let createUnit (s: string): Unit =
-    if s = "nil" then
-      Unit.NoTarget
-    else if s.Contains(REALM_NAME) then
-      let name = (s.Split '-').[0] // trim "" and take Name from Name-HydraxianWaterlords
-      Unit.Player name
-    else
-      Unit.Npc s
+      LogLine.Values = trimmedValue }
 
   let parseBuffDebuff (s: string [], index: int): BuffDebuff =
     if s.Length <= index then
@@ -126,9 +118,9 @@ module Parser =
       Difficulty = createDifficulty (v.[3] |> int)
       GroupSize = v.[4] |> int }
 
-  let createOtherEvent (v: string[]): Event =
+  let createOtherEvent (v: string []): CombatLogEvent =
     match v.[0] with
-    | "COMBAT_LOG_VERSION" -> Event.CombatLogVersion
+    | "COMBAT_LOG_VERSION" -> CombatLogEvent.CombatLogVersion
 
     //    | "SPELL_CAST_SUCCESS" -> Event.SpellCastSuccess(parseTargetedSpell v)
 //    | "SPELL_CAST_START" -> Event.SpellCastStart(parseTargetedSpell v)
@@ -144,7 +136,7 @@ module Parser =
 //    | "SPELL_ENERGIZE" -> Event.SpellPeriodicDamage(parseTargetedSpell v)
 //    | "SPELL_PERIODIC_ENERGIZE" -> Event.SpellPeriodicDamage(parseTargetedSpell v)
     | "SPELL_DISPEL" ->
-        Event.SpellDispel
+        CombatLogEvent.SpellDispel
           { Who = createUnit v.[2]
             Target = createUnit v.[6]
             SpellName = v.[10]
@@ -162,34 +154,33 @@ module Parser =
 //    | "SWING_DAMAGE_MISSED" -> Event.SwingDamageMissed(parseTargetedSpell v)
 //    | "SWING_MISSED" -> Event.SwingDamageMissed(parseTargetedSpell v)
 
-    | "ENCHANT_APPLIED" -> Event.EnchantApplied(parseEnchantSpell v)
-    | "ENCHANT_REMOVED" -> Event.EnchantRemoved(parseEnchantSpell v)
-    | "SPELL_DURABILITY_DAMAGE" -> Event.SpellDurabilityDamage(parseEnchantSpell v)
+    | "ENCHANT_APPLIED" -> CombatLogEvent.EnchantApplied(parseEnchantSpell v)
+    | "ENCHANT_REMOVED" -> CombatLogEvent.EnchantRemoved(parseEnchantSpell v)
+    | "SPELL_DURABILITY_DAMAGE" -> CombatLogEvent.SpellDurabilityDamage(parseEnchantSpell v)
 
-//    | "ENVIRONMENTAL_DAMAGE" -> Event.EnvironmentalDamage(parseTargetedSpell v)
-    | "UNIT_DESTROYED" -> Event.UnitDestroyed(createUnit v.[6])
-    | "UNIT_DIED" -> Event.UnitDestroyed(createUnit v.[6])
+    //    | "ENVIRONMENTAL_DAMAGE" -> Event.EnvironmentalDamage(parseTargetedSpell v)
+    | "UNIT_DESTROYED" -> CombatLogEvent.UnitDestroyed(createUnit v.[6])
+    | "UNIT_DIED" -> CombatLogEvent.UnitDestroyed(createUnit v.[6])
     | "PARTY_KILL" ->
-        Event.PartyKill
+        CombatLogEvent.PartyKill
           { Victim = createUnit v.[2]
             KilledBy = createUnit v.[6] }
-    | "ENCOUNTER_START" -> Event.EncounterStart(parseEncounter v)
-    | "ENCOUNTER_END" -> Event.EncounterEnd(parseEncounter v)
-    | "COMBATANT_INFO" -> Event.CombatantInfo { PlayerGUID = v.[1]; Equipment = [||] }
+    | "ENCOUNTER_START" -> CombatLogEvent.EncounterStart(parseEncounter v)
+    | "ENCOUNTER_END" -> CombatLogEvent.EncounterEnd(parseEncounter v)
+    | "COMBATANT_INFO" -> CombatLogEvent.CombatantInfo { PlayerGUID = v.[1]; Equipment = [||] }
 
-    | other -> Event.NotSupported other
+    | other -> CombatLogEvent.NotSupported other
 
-  let createEvent (ev: LogLine): Event =
-    let v =
-      Array.map (fun (s: string) -> s.Trim('"')) ev.Values
+  let createEvent (ev: LogLine): CombatLogEvent =
+    let v = ev.Values
 
     match (parseSpellPrefix v.[0]) with
-      | SpellPrefix.NotRecognizedPrefix _ -> createOtherEvent v
-      | _ -> Event.Spell(parseTargetedSpell v)
+    | SpellPrefix.NotRecognizedPrefix _ -> createOtherEvent v
+    | _ -> CombatLogEvent.Spell(parseTargetedSpell v)
 
-  let readLogLines (filename: string): Event list =
+  let loadAndParseLogLines (filename: string): LogLine list =
     System.IO.File.ReadAllLines(filename)
-      // .[indexFrom..indexTo]
     |> Array.toList
     |> List.map parseLine
-    |> List.map createEvent
+
+  let createEventList (logLines: LogLine list): CombatLogEvent list = logLines |> List.map createEvent

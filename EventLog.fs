@@ -1,10 +1,11 @@
 ﻿namespace WowLogScan
 
 module EventLog =
-  type Unit =
-    | Player of string
-    | Npc of string
-    | NoTarget
+  open System
+  open Model.Unit
+
+  // Preprocessed log line split into separate string pieces
+  type LogLine = { Time: DateTime; Values: string [] }
 
   type BuffDebuff =
     | Buff
@@ -29,24 +30,40 @@ module EventLog =
     | SpellPeriodic
     | Environmental
     | NotRecognizedPrefix of string
-    
+
   type SpellSuffix =
-    | Damage | DamageLanded | Missed | DamageShield
-    | Heal | HealAbsorbed
-    | Energize | Drain | Leech
-    | Dispel | DispelFailed
+    | Damage
+    | DamageLanded
+    | Missed
+    | DamageShield
+    | Heal
+    | HealAbsorbed
+    | Energize
+    | Drain
+    | Leech
+    | Dispel
+    | DispelFailed
     | ExtraAttacks
-    | AuraApplied | AuraRemoved | AuraAppliedDose | AuraRemovedDose | AuraRefresh
-    | Interrupt | AuraBroken | AuraBrokenSpell // fear and interrupt
-    | CastStart | CastSuccess | CastFailed
+    | AuraApplied
+    | AuraRemoved
+    | AuraAppliedDose
+    | AuraRemovedDose
+    | AuraRefresh
+    | Interrupt
+    | AuraBroken
+    | AuraBrokenSpell // fear and interrupt
+    | CastStart
+    | CastSuccess
+    | CastFailed
     | Instakill
-    | DurabilityDamage | DurabilityDamageAll
+    | DurabilityDamage
+    | DurabilityDamageAll
     | Create // spawn under player
     | Summon
     | Resurrect
     | Absorbed
     | NotRecognizedSuffix of string
-  
+
   type TargetedSpell =
     { Prefix: SpellPrefix
       Suffix: SpellSuffix
@@ -66,26 +83,22 @@ module EventLog =
     | Classic20
     | Classic40
     | Value of int
-  
+
   type Encounter =
     { Zone: int
       Boss: Unit
       Difficulty: Difficulty
       GroupSize: int }
-    
-  type EquipmentItem = {
-    ItemId: int
-    ItemLevel: int
-  }
-    
-  type CombatantInfo = {
-    PlayerGUID: string
-    Equipment: EquipmentItem[]
-  }
 
-  type Event =
+  type EquipmentItem = { ItemId: int; ItemLevel: int }
+
+  type CombatantInfo =
+    { PlayerGUID: string
+      Equipment: EquipmentItem [] }
+
+  type CombatLogEvent =
     | CombatLogVersion
-    
+
     | Spell of TargetedSpell
     | SpellDispel of SpellDispel
 
@@ -93,23 +106,11 @@ module EventLog =
     | EnchantRemoved of EnchantSpell
     | SpellDurabilityDamage of EnchantSpell // force reactive disk
 
-//    | DamageShield of TargetedSpell // thorns
-//    | DamageShieldMissed of TargetedSpell // thorns resist
-
     | UnitDestroyed of Unit
     | UnitDied of Unit
     | PartyKill of PartyKill // player down
     | EncounterStart of Encounter
     | EncounterEnd of Encounter
     | CombatantInfo of CombatantInfo // gear and buffs
-
-//    | RangeDamage of TargetedSpell
-//    | RangeMissed of TargetedSpell
-//    | EnvironmentalDamage of TargetedSpell
-
-//    | SwingDamage of TargetedSpell
-//    | SwingDamageLanded of TargetedSpell
-//    | SwingDamageMissed of TargetedSpell
-//    | SwingMissed of TargetedSpell
 
     | NotSupported of string

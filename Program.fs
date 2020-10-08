@@ -9,7 +9,7 @@ module Main =
   let printUnknownEvents logLines =
     for ev in logLines do
       match ev with
-      | Event.NotSupported _ -> printfn "%A" ev
+      | CombatLogEvent.NotSupported _ -> printfn "%A" ev
       | _ -> ()
 
   
@@ -17,11 +17,13 @@ module Main =
   let main argv =
     printfn "WowLogParser for gear check and buffs..."
 
-    let logLines = Parser.readLogLines(argv.[0])
+    let preprocessedLogLines = Parser.loadAndParseLogLines(argv.[0])
+    let eventList = Parser.createEventList preprocessedLogLines
     // printUnknownEvents logLines    
 
-    let raid = scanUnits logLines
+    let raid = scanUnits preprocessedLogLines
     
-    printfn "%A" raid   
+    for player in raid.Players do
+      printfn "%+A" player   
       
     0 // return an integer exit code
