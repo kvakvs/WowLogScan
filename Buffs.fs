@@ -2,15 +2,12 @@
 
 module Buffs =
   type WorldBuff =
-    | Dragonslayer
-    | Zandalar
-    | OgreKing
-    | Songflower
-    | DarkmoonFaire
+    | Dragonslayer | Rend | Zandalar | OgreKing | Songflower | DarkmoonFaire
 
   let recognizeBuff (s: string): Option<WorldBuff> =
     match s with
     | "Rallying Cry of the Dragonslayer" -> Some WorldBuff.Dragonslayer
+    | "Warchief's Blessing" -> Some WorldBuff.Rend
     | "Spirit of Zandalar" -> Some WorldBuff.Zandalar
     | "Songflower Serenade" -> Some WorldBuff.Songflower
     | "Fengus' Ferocity" -> Some WorldBuff.OgreKing
