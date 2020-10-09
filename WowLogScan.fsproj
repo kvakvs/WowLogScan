@@ -33,6 +33,14 @@
         <OtherFlags>--warnon:1182</OtherFlags>
     </PropertyGroup>
     <ItemGroup>
+        <Reference Include="FParsec, Version=1.0.0.0, Culture=neutral, PublicKeyToken=40ccfc0a09edbb5d">
+          <HintPath>packages\FParsec.1.1.1\lib\net45\FParsec.dll</HintPath>
+          <Private>True</Private>
+        </Reference>
+        <Reference Include="FParsecCS, Version=1.0.0.0, Culture=neutral, PublicKeyToken=40ccfc0a09edbb5d">
+          <HintPath>packages\FParsec.1.1.1\lib\net45\FParsecCS.dll</HintPath>
+          <Private>True</Private>
+        </Reference>
         <Reference Include="mscorlib" />
         <Reference Include="System" />
         <Reference Include="System.Core" />
@@ -40,9 +48,15 @@
         <Reference Include="FSharp.Core">
             <HintPath>packages\FSharp.Core.4.5.2\lib\net45\FSharp.Core.dll</HintPath>
         </Reference>
+        <Reference Include="System.ValueTuple, Version=4.0.2.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51">
+          <HintPath>packages\System.ValueTuple.4.4.0\lib\net47\System.ValueTuple.dll</HintPath>
+          <Private>True</Private>
+        </Reference>
     </ItemGroup>
     <ItemGroup>
         <Compile Include="AssemblyInfo.fs" />
+        <Compile Include="CombatlogType.fs" />
+        <Compile Include="CombatlogSyntax.fs" />
         <Compile Include="Unit.fs" />
         <Compile Include="Buffs.fs" />
         <Compile Include="EventLog.fs" />

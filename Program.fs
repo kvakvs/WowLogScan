@@ -1,9 +1,8 @@
 ﻿namespace WowLogScan
 
-open WowLogScan
-open WowLogScan.Buffs
-
 module Main =
+  open FParsec
+  open WowLogScan
   open EventLog
   open ScanUnits
   open ScanBuffs
@@ -15,8 +14,7 @@ module Main =
       | _ -> ()
 
 
-  [<EntryPoint>]
-  let main argv =
+  let oldMain (argv: string []): int =
     printfn "WowLogParser for gear check and buffs..."
 
     let preprocessedLogLines = Parser.loadAndParseLogLines (argv.[0])
@@ -31,6 +29,25 @@ module Main =
     // for player in raid.Players do printfn "%+A" player
 
     let worldBuffs = scanWorldBuffs (raid, eventList)
-    for wb in worldBuffs do printfn "%+A" wb
+    for wb in worldBuffs do
+      printfn "%+A" wb
 
     0 // return an integer exit code
+
+  [<EntryPoint>]
+  let main (argv: string []): int =
+    let filename = argv.[0]
+    let lines = System.IO.File.ReadAllLines(filename)
+//    match CharParsers.runParserOnString CombatlogSyntax.versionString () "test1" "1.13.2" with
+//    | Success (ok, _, _) ->
+//        printfn "Success: %A" ok
+//    | Failure (err, _, _) ->
+//        printfn "Fail: %s" err
+
+    for ln in lines.[1..10] do
+      match CharParsers.runParserOnString CombatlogSyntax.combatLogEvent () filename ln with
+          | Success (ok, _, _) ->
+              printfn "Success: %A" ok
+          | Failure (err, _, _) ->
+              printfn "Fail: %s" err
+    0
