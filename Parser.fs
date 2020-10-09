@@ -1,6 +1,7 @@
 ﻿namespace WowLogScan
 
 module Parser =
+  open WowLogScan.Model.GearPiece
   open System
   open WowLogScan
   open WowLogScan.CombatlogType
@@ -97,7 +98,7 @@ module Parser =
     match s with
     | CLToken.Environmental dt -> Ability.Environmental dt
     | _ -> failwithf "Expected environmental damage type, while got %A" s
-  
+
   let parseAbility (v: CLToken []): Ability =
     let eventName = extractString v.[0]
     let prefix = parseSpellPrefix eventName
@@ -105,9 +106,9 @@ module Parser =
 
     match prefix, suffix with
     | (SpellPrefix.Spell, SpellSuffix.Absorbed) ->
-      match v.[14] with
-      | CLToken.String s -> createSpell s
-      | _ -> extractString v.[17] |> createSpell 
+        match v.[14] with
+        | CLToken.String s -> createSpell s
+        | _ -> extractString v.[17] |> createSpell
     | (SpellPrefix.Spell, _) -> extractString v.[10] |> createSpell
     | (SpellPrefix.SpellPeriodic, _) -> extractString v.[10] |> createSpell
     | (SpellPrefix.Swing, _) -> Ability.Melee
@@ -148,6 +149,23 @@ module Parser =
       Difficulty = createDifficulty (extractInt v.[3])
       GroupSize = extractInt v.[4] }
 
+  let parseGearPiece (t: CLToken, slotId: int): GearPiece =
+    match t with
+    | CLToken.List itemParams ->
+      {SlotId = createEquipmentSlot slotId
+       ItemId = extractInt itemParams.[0]
+       ItemLevel = extractInt itemParams.[1]
+       Enchants = extractList itemParams.[2] }
+    | _  -> failwithf "Error while parsing gear piece of a combatant, required list, got %A" t
+
+  let parseCombatantGear (g: CLToken list): GearPiece list =
+    List.mapi (fun i value -> parseGearPiece(value, i)) g
+
+  let parseCombatantInfo (v: CLToken []): CombatantInfo =
+    let gear = extractList v.[28] |> parseCombatantGear
+    { Player = unitFromToken v.[1]
+      Equipment = gear }
+
   let createOtherEvent (v: CLToken []): CombatLogEvent =
     match extractString v.[0] with
     | "COMBAT_LOG_VERSION" -> CombatLogEvent.CombatLogVersion
@@ -171,10 +189,8 @@ module Parser =
     | "ENCOUNTER_START" -> CombatLogEvent.EncounterStart(parseEncounter v)
     | "ENCOUNTER_END" -> CombatLogEvent.EncounterEnd(parseEncounter v)
     | "COMBATANT_INFO" ->
-        // printfn "Combatant %A" v
-        CombatLogEvent.CombatantInfo
-          { Player = unitFromToken v.[1]  
-            Equipment = [||] }
+      let ci = parseCombatantInfo v
+      CombatLogEvent.CombatantInfo(ci)
 
     | other -> CombatLogEvent.NotSupported other
 

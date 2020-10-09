@@ -1,12 +1,11 @@
 ﻿namespace WowLogScan
 
-open WowLogScan.CombatlogType
-
 module Main =
   open FParsec
   open WowLogScan
   open EventLog
   open ScanUnits
+  open ScanBuffs
 
   let printUnknownEvents logLines =
     for ev in logLines do
@@ -17,13 +16,18 @@ module Main =
 
   let handleParsedList astEvents =
     let events = astEvents |> List.mapi (fun index v -> Parser.createEvent(v, index)) 
-    
+
+    // Parse unit ids and match to player names    
     let raid = scanUnits astEvents
-    printfn "%+A" raid
-    
-//    let worldBuffs = scanWorldBuffs (raid, eventList)
-//    for wb in worldBuffs do
-//      printfn "%+A" wb
+
+    // Parse world buffs gained/lost for raid prep/contribution
+    printfn "--- WORLD BUFFS (raid prep) ---"    
+    let worldBuffs = scanWorldBuffs (raid, events)
+    for wb in worldBuffs do
+      printfn "%A %A" wb.Key wb.Value
+
+//    printfn "--- CONSUMABLES (raid prep) ---"    
+//    let worldBuffs = scanWorldBuffs (raid, events)
 
 
   //  let oldMain (argv: string []): int =

@@ -1,7 +1,7 @@
 ﻿namespace WowLogScan
 
-
 module EventLog =
+  open WowLogScan.Model.GearPiece
   open WowLogScan.CombatlogType
   open System
   open Model.Unit
@@ -97,11 +97,9 @@ module EventLog =
       Difficulty: Difficulty
       GroupSize: int64 }
 
-  type EquipmentItem = { ItemId: int64; ItemLevel: int64 }
-
   type CombatantInfo =
     { Player: Unit
-      Equipment: EquipmentItem [] }
+      Equipment: GearPiece list }
 
   type CombatLogEvent =
     | CombatLogVersion
