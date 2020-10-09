@@ -17,13 +17,13 @@ module ScanBuffs =
 
     for ev in events do
       match ev with
-      | CombatLogEvent.Spell sp when sp.Prefix = SpellPrefix.Spell ->
+      | CombatLogEvent.Spell sp when sp.Base.Prefix = SpellPrefix.Spell ->
           match sp.Spell with
           | Ability.Spell spellName ->
               match recognizeBuff spellName with
               | None -> ()
               | Some buff ->
-                  let foundBuff = { Player = sp.Target; Buff = buff }
+                  let foundBuff = { Player = sp.Base.Target; Buff = buff }
                   // printfn "Found buff %+A" foundBuff
                   allFoundBuffs.Add(foundBuff)
           | _ -> ()

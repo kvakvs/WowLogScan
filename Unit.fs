@@ -1,9 +1,14 @@
 ﻿namespace WowLogScan.Model
 
+
 module Unit =
+  open WowLogScan.CombatlogType
+  
   type Unit =
-    | Player of string
+    | Player of string // player name, not id
+    | PlayerId of string // player unit id, not name
     | Npc of string
+    | Pet of string
     | NoTarget
 
   let REALM_NAME = @"HydraxianWaterlords"
@@ -16,3 +21,14 @@ module Unit =
       Unit.Player name
     else
       Unit.Npc s
+
+  let unitFromToken (t: CLToken): Unit =
+    match t with
+    | CLToken.UnitId s ->
+      match s with
+      | s when s.StartsWith("Player-") -> Unit.PlayerId s
+      | _ -> Unit.Npc s
+    | CLToken.Player s -> Unit.Player s
+    | CLToken.Nil | CLToken.Int64 0L -> Unit.NoTarget
+    | CLToken.String s -> Unit.Pet s
+    | _ -> failwithf "UnitID or Player token expected, instead got %A" t

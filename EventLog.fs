@@ -1,6 +1,8 @@
 ﻿namespace WowLogScan
 
+
 module EventLog =
+  open WowLogScan.CombatlogType
   open System
   open Model.Unit
 
@@ -15,6 +17,7 @@ module EventLog =
   type Ability =
     | Spell of string
     | Melee
+    | Environmental of EnvDamageType
 
   type SpellDispel =
     { Who: Unit
@@ -64,11 +67,15 @@ module EventLog =
     | Absorbed
     | NotRecognizedSuffix of string
 
-  type TargetedSpell =
+
+  type SpellBaseParams =
     { Prefix: SpellPrefix
       Suffix: SpellSuffix
       Who: Unit
-      Target: Unit
+      Target: Unit }
+
+  type TargetedSpell =
+    { Base: SpellBaseParams
       Spell: Ability
       IsBuff: BuffDebuff }
 
@@ -82,18 +89,18 @@ module EventLog =
   type Difficulty =
     | Classic20
     | Classic40
-    | Value of int
+    | Value of int64
 
   type Encounter =
-    { Zone: int
+    { Zone: int64
       Boss: Unit
       Difficulty: Difficulty
-      GroupSize: int }
+      GroupSize: int64 }
 
-  type EquipmentItem = { ItemId: int; ItemLevel: int }
+  type EquipmentItem = { ItemId: int64; ItemLevel: int64 }
 
   type CombatantInfo =
-    { PlayerGUID: string
+    { Player: Unit
       Equipment: EquipmentItem [] }
 
   type CombatLogEvent =
