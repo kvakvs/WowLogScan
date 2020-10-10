@@ -29,7 +29,8 @@ module Main =
       
     printfn "--- CONSUMABLES (raid prep) ---"
     let consumReport = scanConsumables (raid, events)
-    printfn "%A" consumReport
+    for cr in consumReport do
+    printfn "%s" (printReport cr)
 
   [<EntryPoint>]
   let main (argv: string []): int =
