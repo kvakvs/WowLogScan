@@ -52,7 +52,7 @@ module Parser =
     | _ -> Ability.Spell s
 
   let (|Prefix|_|) (p: string) (s: string) =
-    if s.StartsWith(p) then Some(s.Substring(p.Length)) else None
+    if s.StartsWith(p) then Some(s.Substring(p.Length)) else Option.None
 
   let parseSpellPrefix (s: string): SpellPrefix =
     match s with
@@ -155,7 +155,7 @@ module Parser =
       {SlotId = createEquipmentSlot slotId
        ItemId = extractInt itemParams.[0]
        ItemLevel = extractInt itemParams.[1]
-       Enchants = extractList itemParams.[2] }
+       Enchants = extractList itemParams.[2] |> List.map (extractInt >> createEnchantment) }
     | _  -> failwithf "Error while parsing gear piece of a combatant, required list, got %A" t
 
   let parseCombatantGear (g: CLToken list): GearPiece list =
@@ -190,6 +190,8 @@ module Parser =
     | "ENCOUNTER_END" -> CombatLogEvent.EncounterEnd(parseEncounter v)
     | "COMBATANT_INFO" ->
       let ci = parseCombatantInfo v
+//      for item in (ci.Equipment |> List.map (sprintf "%A")) do
+//        printfn "%A" item
       CombatLogEvent.CombatantInfo(ci)
 
     | other -> CombatLogEvent.NotSupported other
