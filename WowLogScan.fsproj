@@ -59,11 +59,12 @@
         <Compile Include="CombatlogSyntax.fs" />
         <Compile Include="Unit.fs" />
         <Compile Include="GearPiece.fs" />
-        <Compile Include="Buffs.fs" />
         <Compile Include="EventLog.fs" />
+        <Compile Include="Buffs.fs" />
         <Compile Include="Parser.fs" />
         <Compile Include="RaidState.fs" />
         <Compile Include="ScanBuffs.fs" />
+        <Compile Include="ScanConsumables.fs" />
         <Compile Include="ScanUnits.fs" />
         <Compile Include="Program.fs" />
         <Content Include="packages.config" />

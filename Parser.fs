@@ -127,10 +127,28 @@ module Parser =
       Who = unitFromToken v.[2]
       Target = unitFromToken v.[6] }
 
+  let createPower (p: int64): Power =
+    match p with
+    | 0L -> Power.Mana
+    | 1L -> Power.Rage
+    | 2L -> Power.Focus
+    | 3L -> Power.Energy
+    | 4L -> Power.Combo
+    | _ -> Power.Other
+  
+  let parseEnergize (v: CLToken []): Option<Energize> =
+    match v.[0] with
+    | CLToken.String "SPELL_ENERGIZE" ->
+      Some {Amount = extractFloat v.[28]
+            OverEnergize = extractFloat v.[29]
+            PowerType = extractInt v.[30] |> createPower }
+    | _ -> Option.None
+  
   let parseSpell (v: CLToken []): TargetedSpell =
     { Base = parseBaseParams v
       Spell = parseAbility v
-      IsBuff = parseBuffDebuff (v, 12) }
+      IsBuff = parseBuffDebuff (v, 12)
+      Energize = parseEnergize v }
 
   let parseEnchantSpell (v: CLToken []): EnchantSpell =
     { Who = unitFromToken v.[6]

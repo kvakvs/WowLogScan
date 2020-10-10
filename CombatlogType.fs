@@ -37,6 +37,11 @@ module CombatlogType =
     | CLToken.Int64 i -> i
     | _ -> failwithf "Int64 token expected, instead got %A" t
 
+  let extractFloat (t: CLToken): float =
+    match t with
+    | CLToken.Float f -> f
+    | _ -> failwithf "Float token expected, instead got %A" t
+
   let extractList (t: CLToken): CLToken list =
     match t with
     | CLToken.List t -> t

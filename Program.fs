@@ -6,6 +6,7 @@ module Main =
   open EventLog
   open ScanUnits
   open ScanBuffs
+  open ScanConsumables
 
   let printUnknownEvents logLines =
     for ev in logLines do
@@ -22,33 +23,13 @@ module Main =
 
     // Parse world buffs gained/lost for raid prep/contribution
     printfn "--- WORLD BUFFS (raid prep) ---"    
-    let worldBuffs = scanWorldBuffs (raid, events)
-    for wb in worldBuffs do
+    let worldBuffsReport = scanWorldBuffs (raid, events)
+    for wb in worldBuffsReport do
       printfn "%A %A" wb.Key wb.Value
-
-//    printfn "--- CONSUMABLES (raid prep) ---"    
-//    let worldBuffs = scanWorldBuffs (raid, events)
-
-
-  //  let oldMain (argv: string []): int =
-//    printfn "WowLogParser for gear check and buffs..."
-//
-//    let preprocessedLogLines = Parser.loadAndParseLogLines (argv.[0])
-//
-//    let eventList =
-//      Parser.createEventList preprocessedLogLines
-//    // printUnknownEvents logLines
-//
-//    let raid = scanUnits preprocessedLogLines
-//
-//    // Print unitId to player mapping
-//    // for player in raid.Players do printfn "%+A" player
-//
-//    let worldBuffs = scanWorldBuffs (raid, eventList)
-//    for wb in worldBuffs do
-//      printfn "%+A" wb
-//
-//    0 // return an integer exit code
+      
+    printfn "--- CONSUMABLES (raid prep) ---"
+    let consumReport = scanConsumables (raid, events)
+    printfn "%A" consumReport
 
   [<EntryPoint>]
   let main (argv: string []): int =

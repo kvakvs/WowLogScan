@@ -74,10 +74,24 @@ module EventLog =
       Who: Unit
       Target: Unit }
 
+  type Power =
+    | Mana
+    | Rage
+    | Focus
+    | Energy
+    | Combo
+    | Other
+  
+  type Energize =
+    { Amount: float
+      OverEnergize: float
+      PowerType: Power }
+
   type TargetedSpell =
     { Base: SpellBaseParams
       Spell: Ability
-      IsBuff: BuffDebuff }
+      IsBuff: BuffDebuff
+      Energize: Option<Energize> }
 
   type EnchantSpell =
     { Who: Unit
