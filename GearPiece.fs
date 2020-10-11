@@ -47,6 +47,21 @@ module GearPiece =
     | 18 -> Tabard
     | _ -> Unknown s
 
+  let isSlotEnchantable (s: EquipmentSlot): bool =
+    match s with
+    | EquipmentSlot.Head
+    | EquipmentSlot.Shoulder
+    | EquipmentSlot.Chest
+    | EquipmentSlot.Legs
+    | EquipmentSlot.Feet
+    | EquipmentSlot.Wrist
+    | EquipmentSlot.Hands
+    | EquipmentSlot.Cloak
+    | EquipmentSlot.MainHand
+    | EquipmentSlot.OffHand
+    | EquipmentSlot.Ranged -> true
+    | _ -> false
+  
   type Enchantment =
     | Enchant of int64 * string
     | Unknown of int64

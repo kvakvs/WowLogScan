@@ -7,6 +7,7 @@ module Main =
   open ScanUnits
   open ScanBuffs
   open ScanConsumables
+  open ScanEnchants
 
   let printUnknownEvents logLines =
     for ev in logLines do
@@ -30,7 +31,12 @@ module Main =
     printfn "--- CONSUMABLES (raid prep) ---"
     let consumReport = scanConsumables (raid, events)
     for cr in consumReport do
-    printfn "%s" (printReport cr)
+      printfn "%s" (ScanConsumables.printReport cr)
+
+    printfn "--- ENCHANTED GEAR (raid prep) ---"
+    let enchantsReport = scanEnchants (raid, events)
+    for er in enchantsReport do
+      printfn "%s" (ScanEnchants.printReport er)
 
   [<EntryPoint>]
   let main (argv: string []): int =

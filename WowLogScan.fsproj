@@ -64,6 +64,7 @@
         <Compile Include="Parser.fs" />
         <Compile Include="RaidState.fs" />
         <Compile Include="ScanBuffs.fs" />
+        <Compile Include="ScanEnchants.fs" />
         <Compile Include="ScanConsumables.fs" />
         <Compile Include="ScanUnits.fs" />
         <Compile Include="Program.fs" />
