@@ -61,11 +61,16 @@ module CombatlogSyntax =
   let parseInt =
     pint64 .>> notFollowedByL (pchar '.') "Can't take integer when there seems to be a floating point"
 
+  let damageKeyword =
+    choice [ pstring "Falling"
+             pstring "Fire" 
+             pstring "Lava" ]
+  
   let eventArg, eventArgImpl =
     createParserForwardedToRef<CLToken, ParserState> ()
-
+  
   do eventArgImpl
-     := choice [ pstring "Falling"
+     := choice [ damageKeyword
                  >>% CLToken.Environmental Falling
                  pstring "nil" >>% CLToken.Nil
                  pstring "0x" >>. many1 hex |>> createHexToken
