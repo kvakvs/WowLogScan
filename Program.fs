@@ -3,6 +3,7 @@
 module Main =
   open FParsec
   open WowLogScan
+  open WowLogScan.Model.Unit
   open EventLog
   open ScanUnits
   open ScanBuffs
@@ -17,17 +18,23 @@ module Main =
 
 
   let handleParsedList astEvents =
-    let events = astEvents |> List.mapi (fun index v -> Parser.createEvent(v, index)) 
+    let events =
+      astEvents
+      |> List.mapi (fun index v -> Parser.createEvent (v, index))
 
-    // Parse unit ids and match to player names    
+    // Parse unit ids and match to player names
     let raid = scanUnits astEvents
 
     // Parse world buffs gained/lost for raid prep/contribution
-    printfn "--- WORLD BUFFS (raid prep) ---"    
+    printfn "--- WORLD BUFFS (raid prep) ---"
     let worldBuffsReport = scanWorldBuffs (raid, events)
     for wb in worldBuffsReport do
-      printfn "%A %A" wb.Key wb.Value
-      
+      match wb.Key with
+      | Player p ->
+          let effortScore = EffortScore.scoreWorldBuffs (wb.Value)
+          printfn "%d %A %A" effortScore p wb.Value
+      | _ -> ()
+
     printfn "--- CONSUMABLES (raid prep) ---"
     let consumReport = scanConsumables (raid, events)
     for cr in consumReport do
@@ -41,10 +48,9 @@ module Main =
   [<EntryPoint>]
   let main (argv: string []): int =
     let filename = argv.[0]
-//    let lines = System.IO.File.ReadAllLines(filename)
+    //    let lines = System.IO.File.ReadAllLines(filename)
 
     match CharParsers.runParserOnFile CombatlogSyntax.combatLogEventList () filename System.Text.Encoding.UTF8 with
-    | Success (parsedList, _, _) ->
-        handleParsedList parsedList |> ignore
+    | Success (parsedList, _, _) -> handleParsedList parsedList |> ignore
     | Failure (err, _, _) -> printfn "Fail: %s" err
     0

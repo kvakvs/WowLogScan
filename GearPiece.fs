@@ -69,8 +69,10 @@ module GearPiece =
 
   let lookupEnchantmentId (id: int64): Option<string> =
     match id with
+    | 18L -> Some "+32 Armor Kit"
     | 33L -> Some "+3 Scope"
     | 34L -> Some "+2% Haste Counterweight"
+    | 66L -> Some "+1 Stamina"
     | 247L -> Some "+1 Agility"
     | 464L -> Some "+4% Mount"
     | 564L -> Some "Windfury Totem 3"
@@ -85,6 +87,7 @@ module GearPiece =
     | 904L -> Some "+5 Agility"
     | 905L -> Some "+5 Intellect"
     | 906L -> Some "+5 Mining"
+    | 907L -> Some "+7 Spirit"
     | 909L -> Some "+5 Herb"
     | 911L -> Some "+8% Run"
     | 927L -> Some "+7 Strength"
@@ -109,6 +112,7 @@ module GearPiece =
     | 1888L -> Some "+5 All Res"
     | 1889L -> Some "+70 Armor"
     | 1891L -> Some "+4 Stats"
+    | 1893L -> Some "+100 Mana"
     | 1892L -> Some "+100 Health"
     | 1900L -> Some "Crusader"
     | 1903L -> Some "+9 Spirit"
@@ -134,6 +138,7 @@ module GearPiece =
     | 2588L -> Some "+18 Spell +1% Hit"
     | 2589L -> Some "+18 Spell +10 Stamina"
     | 2590L -> Some "+13 Spell +10 Stamina +5 Mana/5"
+    | 2591L -> Some "+10 Intellect +10 Stamina +12 Spell"
     | 2604L
     | 2605L -> Some "+18 Spell"
     | 2606L -> Some "+30 AttackP"
@@ -142,6 +147,7 @@ module GearPiece =
     | 2619L -> Some "+15 Fire Res"
     | 2617L -> Some "+16 Spell"
     | 2620L -> Some "+15 Nature Res"
+    | 2622L -> Some "+1% Dodge"
     | 2623L -> Some "Minor Wizard Oil"
     | 2625L -> Some "Lesser Mana Oil"
     | 2627L -> Some "Wizard Oil"

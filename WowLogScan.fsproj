@@ -67,8 +67,10 @@
         <Compile Include="ScanEnchants.fs" />
         <Compile Include="ScanConsumables.fs" />
         <Compile Include="ScanUnits.fs" />
+        <Compile Include="EffortScore.fs" />
         <Compile Include="Program.fs" />
         <Content Include="packages.config" />
+        <Content Include="1.txt" />
     </ItemGroup>
     <Import Project="$(FSharpTargetsPath)" Condition="Exists('$(FSharpTargetsPath)')" />
 </Project>
