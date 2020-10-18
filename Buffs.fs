@@ -11,6 +11,7 @@ module Buffs =
     | OgreKing
     | Songflower
     | DarkmoonFaire
+    | SeasonalHalloween
 
   type ConsumableClass =
     | PotentFlask
@@ -31,6 +32,7 @@ module Buffs =
     | "Fengus' Ferocity" -> Some WorldBuff.OgreKing
     | "Mol'dar's Moxie" -> Some WorldBuff.OgreKing
     | "Slip'kik's Savvy" -> Some WorldBuff.OgreKing
+    | "Invocation of the Wickerman" -> Some WorldBuff.SeasonalHalloween
     | s when s.Contains("Sayge's Dark Fortune") -> Some WorldBuff.DarkmoonFaire
     | _ -> None
 
