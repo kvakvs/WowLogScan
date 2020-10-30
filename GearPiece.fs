@@ -69,6 +69,8 @@ module GearPiece =
 
   let lookupEnchantmentId (id: int64): Option<string> =
     match id with
+    | 15L -> Some "+8 Armor Kit"
+    | 16L -> Some "+16 Armor Kit"
     | 18L -> Some "+32 Armor Kit"
     | 33L -> Some "+3 Scope"
     | 34L -> Some "+2% Haste Counterweight"
@@ -103,6 +105,7 @@ module GearPiece =
     | 1506L -> Some "+8 Strength"
     | 1508L -> Some "+8 Agility"
     | 1643L -> Some "Sharpened +8"
+    | 1666L -> Some "Flametongue 6"
     | 1669L -> Some "Windfury 4"
     | 1704L -> Some "Thorium Spike"
     | 1843L -> Some "+40 Armor Kit"
@@ -114,8 +117,9 @@ module GearPiece =
     | 1888L -> Some "+5 All Res"
     | 1889L -> Some "+70 Armor"
     | 1891L -> Some "+4 Stats"
-    | 1893L -> Some "+100 Mana"
     | 1892L -> Some "+100 Health"
+    | 1893L -> Some "+100 Mana"
+    | 1894L -> Some "Icy Weapon"
     | 1900L -> Some "Crusader"
     | 1903L -> Some "+9 Spirit"
     | 2463L -> Some "+7 Fire Res"
@@ -151,6 +155,7 @@ module GearPiece =
     | 2619L -> Some "+15 Fire Res"
     | 2617L -> Some "+16 Spell"
     | 2620L -> Some "+15 Nature Res"
+    | 2621L -> Some "+2% Threat Reduce"
     | 2622L -> Some "+1% Dodge"
     | 2623L -> Some "Minor Wizard Oil"
     | 2625L -> Some "Lesser Mana Oil"

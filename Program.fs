@@ -26,6 +26,7 @@ module Main =
     let raid = scanUnits astEvents
 
     // Parse world buffs gained/lost for raid prep/contribution
+    printfn ""
     printfn "# WORLD BUFFS (raid prep) ---"
     printfn "# World buffs are given Effort Points score: First 2 buffs give 3 EP,"
     printfn "# subsequent buffs add 1 EP each till the maximum of 5 EP"
@@ -38,6 +39,7 @@ module Main =
           printfn "%d %A %A" effortScore p wb.Value
       | _ -> ()
 
+    printfn ""
     printfn "# CONSUMABLES (raid prep) ---"
     printfn "# List recognized consumable effects used throughout the raid"
     printfn ""
@@ -45,6 +47,7 @@ module Main =
     for cr in consumReport do
       printfn "%s" (ScanConsumables.printReport cr)
 
+    printfn ""
     printfn "# ENCHANTED GEAR (raid prep) ---"
     printfn "# Listed are all unique items used by players in the raid, with permanent enchants"
     printfn "# Temporary enchant data like oils, poisons and totem effects is available but not analyzed"
