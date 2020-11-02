@@ -6,7 +6,6 @@ module Main =
   open WowLogScan.Model.Unit
   open EventLog
   open ScanUnits
-  open ScanBuffs
   open ScanConsumables
   open ScanEnchants
 
@@ -28,10 +27,11 @@ module Main =
     // Parse world buffs gained/lost for raid prep/contribution
     printfn ""
     printfn "# WORLD BUFFS (raid prep) ---"
-    printfn "# World buffs are given Effort Points score: First 2 buffs give 3 EP,"
-    printfn "# subsequent buffs add 1 EP each till the maximum of 5 EP"
+    printfn "# The scoring rules: "
+    ScanBuffs.printScoringRules
     printfn ""
-    let worldBuffsReport = scanWorldBuffs (raid, events)
+    
+    let worldBuffsReport = ScanBuffs.scanWorldBuffs (raid, events)
     for wb in worldBuffsReport do
       match wb.Key with
       | Player p ->
@@ -40,12 +40,24 @@ module Main =
       | _ -> ()
 
     printfn ""
-    printfn "# CONSUMABLES (raid prep) ---"
-    printfn "# List recognized consumable effects used throughout the raid"
+    printfn "# ENCOUNTER BUFFS (raid consumables) ---"
+    printfn "# List recognized consumable effects up on the combatants when an encounter starts"
+    printfn "# The scoring rules: "
+    
+    ScanCombatantBuffs.printScoringRules
     printfn ""
-    let consumReport = scanConsumables (raid, events)
-    for cr in consumReport do
-      printfn "%s" (ScanConsumables.printReport cr)
+    let combatantBuffReport = ScanCombatantBuffs.scanCombatantBuffs (raid, events)
+    for cr in combatantBuffReport do
+      ScanCombatantBuffs.printReport(raid, cr)
+
+    if true then
+      printfn ""
+      printfn "# CONSUMABLES (raid prep) ---"
+      printfn "# List recognized consumable effects used throughout the raid"
+      printfn ""
+      let consumReport = scanConsumables (raid, events)
+      for cr in consumReport do
+        printfn "%s" (ScanConsumables.printReport cr)
 
     printfn ""
     printfn "# ENCHANTED GEAR (raid prep) ---"

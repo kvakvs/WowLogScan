@@ -49,7 +49,12 @@ module Parser =
   let createSpell (s: string): Ability =
     match s with
     | "0000000000000000" -> Ability.Melee
-    | _ -> Ability.Spell s
+    | _ -> Ability.Spell_ s
+
+  let createSpellWithId (id: int64, s: string): Ability =
+    match s with
+    | "0000000000000000" -> Ability.Melee
+    | _ -> Ability.Spell(SpellId id, s)
 
   let (|Prefix|_|) (p: string) (s: string) =
     if s.StartsWith(p) then Some(s.Substring(p.Length)) else Option.None
@@ -109,7 +114,7 @@ module Parser =
         match v.[14] with
         | CLToken.String s -> createSpell s
         | _ -> extractString v.[17] |> createSpell
-    | (SpellPrefix.Spell, _) -> extractString v.[10] |> createSpell
+    | (SpellPrefix.Spell, _) -> createSpellWithId (extractInt v.[9], extractString v.[10])
     | (SpellPrefix.SpellPeriodic, _) -> extractString v.[10] |> createSpell
     | (SpellPrefix.Swing, _) -> Ability.Melee
     | (SpellPrefix.Range, _) -> extractString v.[10] |> createSpell
@@ -135,15 +140,16 @@ module Parser =
     | 3L -> Power.Energy
     | 4L -> Power.Combo
     | _ -> Power.Other
-  
+
   let parseEnergize (v: CLToken []): Option<Energize> =
     match v.[0] with
     | CLToken.String "SPELL_ENERGIZE" ->
-      Some {Amount = extractFloat v.[28]
+        Some
+          { Amount = extractFloat v.[28]
             OverEnergize = extractFloat v.[29]
             PowerType = extractInt v.[30] |> createPower }
     | _ -> Option.None
-  
+
   let parseSpell (v: CLToken []): TargetedSpell =
     { Base = parseBaseParams v
       Spell = parseAbility v
@@ -170,19 +176,39 @@ module Parser =
   let parseGearPiece (t: CLToken, slotId: int): GearPiece =
     match t with
     | CLToken.List itemParams ->
-      {SlotId = createEquipmentSlot slotId
-       ItemId = extractInt itemParams.[0]
-       ItemLevel = extractInt itemParams.[1]
-       Enchants = extractList itemParams.[2] |> List.map (extractInt >> createEnchantment) }
-    | _  -> failwithf "Error while parsing gear piece of a combatant, required list, got %A" t
+        { SlotId = createEquipmentSlot slotId
+          ItemId = extractInt itemParams.[0]
+          ItemLevel = extractInt itemParams.[1]
+          Enchants =
+            extractList itemParams.[2]
+            |> List.map (extractInt >> createEnchantment) }
+    | _ -> failwithf "Error while parsing gear piece of a combatant, required list, got %A" t
 
   let parseCombatantGear (g: CLToken list): GearPiece list =
-    List.mapi (fun i value -> parseGearPiece(value, i)) g
+    List.mapi (fun i value -> parseGearPiece (value, i)) g
+
+  // Take pairs of [Caster, SpellId] from the list of auras
+  let parseCombatantInfoAuras (tokens: CLToken list): SpellId list =
+    let rec take2 (lst: CLToken list, accum: SpellId list) =
+      match lst with
+      | [] -> accum // exit condition
+      | _caster :: spell :: tail ->
+          let value = extractInt spell |> SpellId
+
+          take2 (tail, value :: accum)
+      | other -> failwithf "Badmatch not a pair: %A" other
+
+    take2 (tokens, [])
 
   let parseCombatantInfo (v: CLToken []): CombatantInfo =
     let gear = extractList v.[28] |> parseCombatantGear
+
+    let auras =
+      parseCombatantInfoAuras (extractList v.[29])
+
     { Player = unitFromToken v.[1]
-      Equipment = gear }
+      Equipment = gear
+      Auras = auras }
 
   let createOtherEvent (v: CLToken []): CombatLogEvent =
     match extractString v.[0] with
@@ -207,10 +233,10 @@ module Parser =
     | "ENCOUNTER_START" -> CombatLogEvent.EncounterStart(parseEncounter v)
     | "ENCOUNTER_END" -> CombatLogEvent.EncounterEnd(parseEncounter v)
     | "COMBATANT_INFO" ->
-      let ci = parseCombatantInfo v
-//      for item in (ci.Equipment |> List.map (sprintf "%A")) do
+        let ci = parseCombatantInfo v
+        //      for item in (ci.Equipment |> List.map (sprintf "%A")) do
 //        printfn "%A" item
-      CombatLogEvent.CombatantInfo(ci)
+        CombatLogEvent.CombatantInfo(ci)
 
     | other -> CombatLogEvent.NotSupported other
 

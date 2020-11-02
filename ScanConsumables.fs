@@ -17,10 +17,11 @@ module ScanConsumables =
     { Encounter: Option<Encounter>
       EncounterSeq: int
       Type: ConsumableClass
+      TypeExplanation: string
       Ability: Ability
       Target: Unit
       Use: GainedLost }
- 
+
   let isPlayer (u: Unit): bool =
     match u with
     | Player _ -> true
@@ -44,33 +45,40 @@ module ScanConsumables =
       match ev with
       | CombatLogEvent.Spell sp when let gained = sp.Base.Suffix = SpellSuffix.AuraApplied
                                      let lost = sp.Base.Suffix = SpellSuffix.AuraRemoved
+
                                      sp.Base.Prefix = SpellPrefix.Spell
                                      && (gained || lost)
                                      && isPlayer sp.Base.Target ->
-          match Buffs.recognizeConsumable sp.Spell with
-          | Some r ->
-              let gained = sp.Base.Suffix = SpellSuffix.AuraApplied
+          let explanation, consumableClass =
+            Buffs.recognizeAbilityAsConsumable sp.Spell
+
+          match consumableClass with
+          | Skip -> ()
+          | _other ->
+              let isGained = sp.Base.Suffix = SpellSuffix.AuraApplied
 
               let useType =
-                if gained then GainedLost.Gained else GainedLost.Lost
+                if isGained then GainedLost.Gained else GainedLost.Lost
 
               result.Add
                 ({ EncounterSeq = encounterSeq
                    Encounter = inEncounter
-                   Type = r
+                   Type = consumableClass
+                   TypeExplanation = explanation
                    Ability = sp.Spell
                    Target = sp.Base.Target
                    Use = useType })
-          | None -> ()
       | CombatLogEvent.Spell sp when sp.Base.Prefix = SpellPrefix.Spell
                                      && sp.Base.Suffix = SpellSuffix.Energize
                                      && isPlayer sp.Base.Target ->
           match Buffs.recognizeEnergize sp with
+          | Some Skip -> ()
           | Some r ->
               result.Add
                 ({ EncounterSeq = encounterSeq
                    Encounter = inEncounter
                    Type = r
+                   TypeExplanation = "Energize"
                    Ability = sp.Spell
                    Target = sp.Base.Target
                    Use = GainedLost.Used })

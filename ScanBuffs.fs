@@ -6,12 +6,16 @@ module ScanBuffs =
   open WowLogScan.Model.Unit
   open Buffs
   open RaidState
+  
+  let printScoringRules =
+    printfn "## World buffs are given Effort Points score: First 2 buffs give 3 EP,"
+    printfn "## subsequent buffs add 1 EP each till the maximum of 5 EP"
 
   // Records a gained or lost buff
   type FoundBuff = { Player: Unit; Buff: WorldBuff }
 
   // Return mapping of player to world buffs they had in this log
-  let scanWorldBuffs (raid: RaidState, events: CombatLogEvent list) =
+  let scanWorldBuffs (_raid: RaidState, events: CombatLogEvent list) =
     // TODO: Combine lost buffs info with COMBATANT_INFO
     let allFoundBuffs = List<FoundBuff>()
 
@@ -19,8 +23,8 @@ module ScanBuffs =
       match ev with
       | CombatLogEvent.Spell sp when sp.Base.Prefix = SpellPrefix.Spell ->
           match sp.Spell with
-          | Ability.Spell spellName ->
-              match recognizeBuff spellName with
+          | Ability.Spell(_id, spellName) ->
+              match recognizeWorldBuff spellName with
               | None -> ()
               | Some buff ->
                   let foundBuff = { Player = sp.Base.Target; Buff = buff }

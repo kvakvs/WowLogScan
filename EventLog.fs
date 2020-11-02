@@ -9,13 +9,16 @@ module EventLog =
   // Preprocessed log line split into separate string pieces
   type LogLine = { Time: DateTime; Values: string [] }
 
+  type SpellId = SpellId of int64
+
   type BuffDebuff =
     | Buff
     | Debuff
     | Neither
 
   type Ability =
-    | Spell of string
+    | Spell of SpellId * string
+    | Spell_ of string // spell with text only, is this useful?
     | Melee
     | Environmental of EnvDamageType
 
@@ -81,7 +84,7 @@ module EventLog =
     | Energy
     | Combo
     | Other
-  
+
   type Energize =
     { Amount: float
       OverEnergize: float
@@ -110,10 +113,11 @@ module EventLog =
       Boss: Unit
       Difficulty: Difficulty
       GroupSize: int64 }
-
+  
   type CombatantInfo =
     { Player: Unit
-      Equipment: GearPiece list }
+      Equipment: GearPiece list
+      Auras: SpellId list }
 
   type CombatLogEvent =
     | CombatLogVersion
