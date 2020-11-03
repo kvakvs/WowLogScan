@@ -33,9 +33,15 @@ module Main =
       let worldBuffsReport = ScanBuffs.scanWorldBuffs (raid, events)
       for wb in worldBuffsReport do
         match wb.Key with
+        | Player p -> printfn "%A %A" p wb.Value
+        | _ -> ()
+
+      // Print CSV
+      for wb in worldBuffsReport do
+        match wb.Key with
         | Player p ->
             let effortScore = EffortScore.scoreWorldBuffs (wb.Value)
-            printfn "%d %A %A" effortScore p wb.Value
+            printfn "%s,%d,Worldbuff" p effortScore 
         | _ -> ()
 
     if true then

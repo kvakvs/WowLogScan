@@ -62,12 +62,19 @@ module ScanConsumablesInCombat =
 
     for inp in inputs do
       for entry in inp do
-        if grades.ContainsKey entry.Key then
-          replaceKey(grades, entry.Key, grades.[entry.Key] + entry.Value)
-        else
-          grades.Add(entry.Key, entry.Value)
+        if grades.ContainsKey entry.Key
+        then replaceKey (grades, entry.Key, grades.[entry.Key] + entry.Value)
+        else grades.Add(entry.Key, entry.Value)
 
     grades
+
+  let capGradesAt (input: PlayerEPScores, cap: float): PlayerEPScores =
+    let result = PlayerEPScores()
+
+    for item in input do
+      result.Add(item.Key, Math.Min(item.Value, cap))
+
+    result
 
   let gradeEncounterEP (e: EncounterReport): PlayerEPScores =
     let strongOffensive = PlayerEPScores()
@@ -79,21 +86,22 @@ module ScanConsumablesInCombat =
       let playerName = Model.Unit.playerName useEvent.Target
 
       match useEvent.Type with
-      | ConsumableClass.PotentFlask when useEvent.GainedOrLost = Gained ->
-          writeKeyOnce (potentFlask, playerName, 1.0)
+      | ConsumableClass.PotentFlask when useEvent.GainedOrLost = Gained -> writeKeyOnce (potentFlask, playerName, 1.0)
       | ConsumableClass.WeakFlask -> writeKeyOnce (weakFlask, playerName, 1.0)
       | ConsumableClass.PotentOffensive -> writeKeyOnce (strongOffensive, playerName, 1.0)
       | ConsumableClass.WeakOffensive -> writeKeyOnce (weakOffensive, playerName, 0.5)
       | _ -> ()
 
-    mergeGrades [ potentFlask
-                  weakFlask
-                  strongOffensive
-                  weakOffensive ]
+
+    let merged = mergeGrades [ potentFlask; weakFlask; strongOffensive; weakOffensive ]
+    capGradesAt(merged, 1.0)
 
   let gradeAllEncountersEP (allEncounters: EncounterReport list): PlayerEPScores =
+    // Filter out trash, and grade every encounter
     let allGrades =
-      allEncounters |> List.map gradeEncounterEP
+      allEncounters
+      |> List.filter (fun e -> e.Encounter.IsSome)
+      |> List.map gradeEncounterEP
 
     for g in allGrades do
       printfn "%A" g
@@ -121,8 +129,7 @@ module ScanConsumablesInCombat =
                                      sp.Base.Prefix = SpellPrefix.Spell
                                      && (gained || lost)
                                      && isPlayer sp.Base.Target ->
-          let explanation, consumableClass =
-            recognizeAbilityAsConsumable sp.Spell
+          let explanation, consumableClass = recognizeAbilityAsConsumable sp.Spell
 
           match consumableClass with
           | Skip -> ()
