@@ -32,3 +32,9 @@ module Unit =
     | CLToken.Nil | CLToken.Int64 0L -> Unit.NoTarget
     | CLToken.String s -> Unit.Pet s
     | _ -> failwithf "UnitID or Player token expected, instead got %A" t
+
+  let playerName (u: Unit): string =
+    match u with
+    | Player s -> s
+    | _ -> failwithf "Expected Player(_) and got %A" u
+    

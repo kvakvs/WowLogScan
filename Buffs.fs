@@ -112,6 +112,8 @@ module Buffs =
 
   let recognizeAura (spellId: SpellId): string * ConsumableClass =
     match spellId with
+    | SpellId 17628L -> "Flask of Sup", PotentFlask
+    
     | SpellId 24425L -> "Spirit of Zandalar", WorldBuff
     | SpellId 22888L -> "Rallying Cry of the Dragonslayer", WorldBuff
     | SpellId 22817L -> "Fengus' Ferocity", WorldBuff
@@ -125,11 +127,18 @@ module Buffs =
     | SpellId 30175L -> "Cerebral Cortex Compound", WeakFlask
 
     | SpellId 17538L -> "Elixir of the Mongoose", PotentOffensive
+    | SpellId 17038L -> "Winterfall Firewater", PotentOffensive
+    | SpellId 11405L -> "Elixir of Giants", PotentOffensive
+    | SpellId 17539L -> "Greater Arcane Elixir", PotentOffensive
+    | SpellId 11390L -> "Arcane Elixir", WeakOffensive
 
     | SpellId 16323L -> "Juju Power", PotentOffensive
     | SpellId 16329L -> "Juju Might", PotentOffensive
     | SpellId 16325L -> "Juju Chill", PotentDefensive
     | SpellId 16326L -> "Juju Ember", PotentDefensive
+
+    | SpellId 15233L -> "Crystal Ward", WeakDefensive
+    | SpellId 15279L -> "Crystal Spire", WeakDefensive
 
     | SpellId 11349L -> "Elixir of Greater Def", WeakDefensive
     | SpellId _other -> "", Skip
@@ -138,6 +147,6 @@ module Buffs =
   let recognizeAbilityAsConsumable (a: Ability): string * ConsumableClass =
     match a with
     | Ability.Spell(id, _text) -> recognizeAura id
-    | Ability.Spell_ text -> "", Skip
+    | Ability.Spell_ text -> text, Skip
     | _other -> "", Skip
     

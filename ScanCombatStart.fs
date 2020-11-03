@@ -1,6 +1,6 @@
 ﻿namespace WowLogScan
 
-module ScanCombatantBuffs =
+module ScanCombatStart =
   open Model.Unit
   open WowLogScan
   open WowLogScan.Buffs
@@ -25,8 +25,6 @@ module ScanCombatantBuffs =
   type EncounterReportItem = { Boss: Unit; Players: UnitAuras list }
 
   let processCombatStart (encounter: Encounter, events: CombatLogEvent list): EncounterReportItem * CombatLogEvent list =
-    printfn "Enter pCS events length: %d" (events.Length)
-
     let isCombatantInfo (ev: CombatLogEvent): bool =
       match ev with
       | CombatLogEvent.CombatantInfo _ -> true
@@ -72,7 +70,7 @@ module ScanCombatantBuffs =
         // Other events just skip
         forAllEventLog (tail, accum) // do nothing, continue
 
-  let scanCombatantBuffs (_raid: RaidState, events: CombatLogEvent list): EncounterReportItem list =
+  let scan (_raid: RaidState, events: CombatLogEvent list): EncounterReportItem list =
     forAllEventLog (events, []) |> List.rev
 
   let printReport (raid: RaidState, item: EncounterReportItem) =

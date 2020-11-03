@@ -65,10 +65,10 @@
         <Compile Include="RaidState.fs" />
         <Compile Include="ScanBuffs.fs" />
         <Compile Include="ScanEnchants.fs" />
-        <Compile Include="ScanConsumables.fs" />
+        <Compile Include="ScanConsumablesInCombat.fs" />
         <Compile Include="ScanUnits.fs" />
         <Compile Include="EffortScore.fs" />
-        <Compile Include="ScanCombatantBuffs.fs" />
+        <Compile Include="ScanCombatStart.fs" />
         <Compile Include="Program.fs" />
         <Content Include="packages.config" />
     </ItemGroup>
