@@ -121,6 +121,8 @@ module Buffs =
     | SpellId 22820L -> "Slip'kik's Savvy", WorldBuff
     | SpellId 16609L -> "Warchief's Blessing", WorldBuff
 
+    | SpellId 24382L -> "Spirit of Zanza", PotentOffensive
+    | SpellId 24383L -> "Swiftness of Zanza", PotentDefensive
     | SpellId 10669L -> "Ground Scorpok Assay", PotentOffensive
     | SpellId 10693L -> "Gizzard Gum", PotentOffensive
     | SpellId 10668L -> "Lung Juice Cocktail", PotentDefensive
@@ -150,6 +152,7 @@ module Buffs =
     | SpellId 27869L -> "Dark Rune", Potion
     | SpellId 22731L -> "Runn Tum Tuber Surprise", Food
 
+    | SpellId 18230L -> "Grilled Squid", Food
     | SpellId 18233L -> "Nightfin Soup", Food
     | SpellId 18124L -> "Blessed Sunfruit", Food
     | SpellId 18140L -> "Blessed Sunfruit Juice", Food
