@@ -74,7 +74,7 @@ module EventLog =
   type SpellBaseParams =
     { Prefix: SpellPrefix
       Suffix: SpellSuffix
-      Who: Unit
+      Caster: Unit
       Target: Unit }
 
   type Power =

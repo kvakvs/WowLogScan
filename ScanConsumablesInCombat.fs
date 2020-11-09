@@ -19,6 +19,7 @@ module ScanConsumablesInCombat =
     { Type: ConsumableClass
       TypeExplanation: string
       Ability: Ability
+      Caster: Unit
       Target: Unit
       GainedOrLost: GainedLost }
 
@@ -39,7 +40,7 @@ module ScanConsumablesInCombat =
     | None -> "<trash>"
 
   let printReportRow (c: ConsumableUseEvent) =
-    printfn "  %A → %A → %A (%A)" c.Target c.GainedOrLost c.Ability c.Type
+    printfn "  %A → %A → %A (%A)" c.Caster c.GainedOrLost c.Ability c.Type
 
   let printReport (allEncounters: EncounterReport list) =
     for er in allEncounters do
@@ -81,32 +82,51 @@ module ScanConsumablesInCombat =
     let weakOffensive = PlayerEPScores()
     let weakFlask = PlayerEPScores()
     let potentFlask = PlayerEPScores()
+    let potion = PlayerEPScores()
 
     for useEvent in e.Consumables do
-      let playerName = Model.Unit.playerName useEvent.Target
+      let playerName =
+        if isPlayer useEvent.Caster then
+          Model.Unit.playerName useEvent.Caster
+        else
+          Model.Unit.playerName useEvent.Target
 
       match useEvent.Type with
       | ConsumableClass.PotentFlask when useEvent.GainedOrLost = Gained -> writeKeyOnce (potentFlask, playerName, 1.0)
       | ConsumableClass.WeakFlask -> writeKeyOnce (weakFlask, playerName, 1.0)
       | ConsumableClass.PotentOffensive -> writeKeyOnce (strongOffensive, playerName, 1.0)
       | ConsumableClass.WeakOffensive -> writeKeyOnce (weakOffensive, playerName, 0.5)
+      | ConsumableClass.PotentDefensive -> writeKeyOnce (strongOffensive, playerName, 0.5)
+      | ConsumableClass.WeakDefensive -> writeKeyOnce (weakOffensive, playerName, 0.25)
+      | ConsumableClass.Potion -> writeKeyOnce (potion, playerName, 0.5)
       | _ -> ()
 
 
-    let merged = mergeGrades [ potentFlask; weakFlask; strongOffensive; weakOffensive ]
-    capGradesAt(merged, 1.0)
+    let merged =
+      mergeGrades [ potentFlask
+                    weakFlask
+                    strongOffensive
+                    weakOffensive
+                    potion ]
+
+    capGradesAt (merged, 1.0)
 
   let gradeAllEncountersEP (allEncounters: EncounterReport list): PlayerEPScores =
     // Filter out trash, and grade every encounter
-    let allGrades =
+    let encounters =
       allEncounters
       |> List.filter (fun e -> e.Encounter.IsSome)
-      |> List.map gradeEncounterEP
 
-    for g in allGrades do
-      printfn "%A" g
+    let grades = encounters |> List.map gradeEncounterEP
 
-    mergeGrades allGrades
+    let encounterGradePairs = List.zip encounters grades
+    for (e, g) in encounterGradePairs do
+      printfn "Details for %A:" e.Encounter.Value.Boss
+      for i in g do
+        printf "%A; " i
+      printfn ""
+
+    mergeGrades grades
 
   let printEffortPoints (allEncounters: EncounterReport list) =
     printfn ""
@@ -121,43 +141,36 @@ module ScanConsumablesInCombat =
   let scanEncounter (events: CombatLogEvent list): ConsumableUseEvent list =
     let consumableUses = List<ConsumableUseEvent>()
 
+    let recognizeSpellAndStoreUseEvent (sp: TargetedSpell) =
+      let explanation, consumableClass = recognizeAbilityAsConsumable sp.Spell
+
+      match consumableClass with
+      | Skip -> ()
+      | _other ->
+          let useType =
+            match sp.Base.Suffix with
+            | SpellSuffix.AuraApplied -> Gained
+            | SpellSuffix.AuraRemoved -> Lost
+            | SpellSuffix.CastSuccess -> Used
+            | _ -> failwithf "Expected only spells with aura gained/lost or instant cast: %A" sp
+
+          consumableUses.Add
+            ({ Type = consumableClass
+               TypeExplanation = explanation
+               Ability = sp.Spell
+               Caster = sp.Base.Caster
+               Target = sp.Base.Target
+               GainedOrLost = useType })
+
     for ev in events do
       match ev with
-      | CombatLogEvent.Spell sp when let gained = sp.Base.Suffix = SpellSuffix.AuraApplied
-                                     let lost = sp.Base.Suffix = SpellSuffix.AuraRemoved
+      | CombatLogEvent.Spell sp when sp.Base.Suffix = SpellSuffix.CastSuccess
+                                     && isPlayer sp.Base.Caster -> recognizeSpellAndStoreUseEvent sp
 
-                                     sp.Base.Prefix = SpellPrefix.Spell
-                                     && (gained || lost)
-                                     && isPlayer sp.Base.Target ->
-          let explanation, consumableClass = recognizeAbilityAsConsumable sp.Spell
-
-          match consumableClass with
-          | Skip -> ()
-          | _other ->
-              let isGained = sp.Base.Suffix = SpellSuffix.AuraApplied
-
-              let useType =
-                if isGained then GainedLost.Gained else GainedLost.Lost
-
-              consumableUses.Add
-                ({ Type = consumableClass
-                   TypeExplanation = explanation
-                   Ability = sp.Spell
-                   Target = sp.Base.Target
-                   GainedOrLost = useType })
-      | CombatLogEvent.Spell sp when sp.Base.Prefix = SpellPrefix.Spell
-                                     && sp.Base.Suffix = SpellSuffix.Energize
-                                     && isPlayer sp.Base.Target ->
-          match recognizeEnergize sp with
-          | Some Skip -> ()
-          | Some r ->
-              consumableUses.Add
-                ({ Type = r
-                   TypeExplanation = "Energize"
-                   Ability = sp.Spell
-                   Target = sp.Base.Target
-                   GainedOrLost = GainedLost.Used })
-          | None -> ()
+//      | CombatLogEvent.Spell sp when sp.Base.Suffix = SpellSuffix.AuraRemoved
+//                                     && sp.Base.Prefix = SpellPrefix.Spell
+//                                     && (isPlayer sp.Base.Target || isPlayer sp.Base.Caster) ->
+//          recognizeSpellAndStoreUseEvent sp
       | _ -> ()
 
     consumableUses |> Seq.toList

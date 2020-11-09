@@ -121,12 +121,13 @@ module Buffs =
     | SpellId 22820L -> "Slip'kik's Savvy", WorldBuff
     | SpellId 16609L -> "Warchief's Blessing", WorldBuff
 
-    | SpellId 30173L -> "Ground Scorpok Assay", WeakFlask
-    | SpellId 30177L -> "Gizzard Gum", WeakFlask
-    | SpellId 30164L -> "Lung Juice Cocktail", WeakFlask
-    | SpellId 30175L -> "Cerebral Cortex Compound", WeakFlask
+    | SpellId 10669L -> "Ground Scorpok Assay", PotentOffensive
+    | SpellId 10693L -> "Gizzard Gum", PotentOffensive
+    | SpellId 10668L -> "Lung Juice Cocktail", PotentDefensive
+    | SpellId 10692L -> "Cerebral Cortex Compound", PotentOffensive
 
     | SpellId 17538L -> "Elixir of the Mongoose", PotentOffensive
+    | SpellId 11334L -> "Elixir of Greater Agility", WeakOffensive
     | SpellId 17038L -> "Winterfall Firewater", PotentOffensive
     | SpellId 11405L -> "Elixir of Giants", PotentOffensive
     | SpellId 17539L -> "Greater Arcane Elixir", PotentOffensive
@@ -141,6 +142,23 @@ module Buffs =
     | SpellId 15279L -> "Crystal Spire", WeakDefensive
 
     | SpellId 11349L -> "Elixir of Greater Def", WeakDefensive
+    | SpellId 24363L -> "Mageblood Potion", Potion
+    | SpellId 15822L -> "Dreamless Sleep Potion", Potion
+    | SpellId 24360L -> "Greater Dreamless Sleep Potion", Potion
+    | SpellId 17531L -> "Major Mana", Potion
+    | SpellId 16666L -> "Demonic Rune", Potion
+    | SpellId 27869L -> "Dark Rune", Potion
+    | SpellId 22731L -> "Runn Tum Tuber Surprise", Food
+
+    | SpellId 18233L -> "Nightfin Soup", Food
+    | SpellId 18124L -> "Blessed Sunfruit", Food
+    | SpellId 18140L -> "Blessed Sunfruit Juice", Food
+    
+    | SpellId 25120L -> "Lesser Mana Oil", WeakOffensive
+    | SpellId 25121L -> "Wizard Oil", WeakOffensive
+    | SpellId 25122L -> "Brilliant Wizard Oil", PotentOffensive
+    | SpellId 25123L -> "Brilliant Mana Oil", PotentOffensive
+    
     | SpellId _other -> "", Skip
 //    | SpellId other -> (sprintf "Unknown spellid %d" other), Unknown
 

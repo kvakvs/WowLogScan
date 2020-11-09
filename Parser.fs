@@ -127,10 +127,13 @@ module Parser =
     let prefix = parseSpellPrefix eventName
     let suffix = parseSpellSuffix eventName
 
+    let who = unitFromToken v.[2]
+    // 'Target' can be same as 'who' if unit ids match
+    let target = if v.[1] = v.[5] then who else unitFromToken v.[6]
     { Prefix = prefix
       Suffix = suffix
-      Who = unitFromToken v.[2]
-      Target = unitFromToken v.[6] }
+      Caster = who
+      Target = target }
 
   let createPower (p: int64): Power =
     match p with
