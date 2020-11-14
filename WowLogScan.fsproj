@@ -55,12 +55,14 @@
     </ItemGroup>
     <ItemGroup>
         <Compile Include="AssemblyInfo.fs" />
+        <Compile Include="TargetType.fs" />
         <Compile Include="CombatlogType.fs" />
+        <Compile Include="CombatlogToken.fs" />
+        <Compile Include="Target.fs" />
         <Compile Include="CombatlogSyntax.fs" />
-        <Compile Include="Unit.fs" />
+        <Compile Include="Buffs.fs" />
         <Compile Include="GearPiece.fs" />
         <Compile Include="EventLog.fs" />
-        <Compile Include="Buffs.fs" />
         <Compile Include="Parser.fs" />
         <Compile Include="RaidState.fs" />
         <Compile Include="ScanWorldBuffs.fs" />

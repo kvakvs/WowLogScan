@@ -1,24 +1,25 @@
 ﻿namespace WowLogScan
 
-open System
-open WowLogScan.Buffs
-
 module ScanConsumablesInCombat =
+  open WowLogScan.Model.GearPiece
+  open System
+  open WowLogScan.Buffs
   open Microsoft.FSharp.Collections
   open EventLog
   open RaidState
   open System.Collections.Generic
-  open WowLogScan.Model.Unit
+  open CombatlogType
 
   type GainedLost =
     | Gained
     | Lost
+    | Enchanted
     | Used
-
+  
   type ConsumableUseEvent =
     { Type: ConsumableClass
       TypeExplanation: string
-      Ability: Ability
+      Ability: Option<Ability>
       Caster: Unit
       Target: Unit
       GainedOrLost: GainedLost }
@@ -30,17 +31,23 @@ module ScanConsumablesInCombat =
 
   let isPlayer (u: Unit): bool =
     match u with
-    | Player _ -> true
-    | PlayerId _ -> true
+    | TargetType.Player _ -> true
+    | TargetType.PlayerId _ -> true
     | _ -> false
 
   let formatEncounter (e: Option<Encounter>): string =
     match e with
     | Some encounter -> sprintf "%A" encounter.Boss
-    | None -> "<trash>"
+    | Option.None -> "<trash>"
 
   let printReportRow (c: ConsumableUseEvent) =
-    printfn "  %A → %A → %A (%A)" c.Caster c.GainedOrLost c.Ability c.Type
+    let explainAbility(a: Option<Ability>): string =
+      match a with
+      | Some(Ability.Spell(spellId, name)) -> sprintf "%A %s (%s)" spellId name c.TypeExplanation
+      | Some a -> sprintf "%A (%s)" a c.TypeExplanation
+      | Option.None -> c.TypeExplanation
+      
+    printfn "  %A → %A → %s (%A)" c.Caster c.GainedOrLost (explainAbility c.Ability) c.Type
 
   let printReport (allEncounters: EncounterReport list) =
     for er in allEncounters do
@@ -86,10 +93,7 @@ module ScanConsumablesInCombat =
 
     for useEvent in e.Consumables do
       let playerName =
-        if isPlayer useEvent.Caster then
-          Model.Unit.playerName useEvent.Caster
-        else
-          Model.Unit.playerName useEvent.Target
+        if isPlayer useEvent.Caster then Target.playerName useEvent.Caster else Target.playerName useEvent.Target
 
       match useEvent.Type with
       | ConsumableClass.PotentFlask when useEvent.GainedOrLost = Gained -> writeKeyOnce (potentFlask, playerName, 1.0)
@@ -120,10 +124,13 @@ module ScanConsumablesInCombat =
     let grades = encounters |> List.map gradeEncounterEP
 
     let encounterGradePairs = List.zip encounters grades
+
     for (e, g) in encounterGradePairs do
       printfn "Details for %A:" e.Encounter.Value.Boss
+
       for i in g do
         printf "%A; " i
+
       printfn ""
 
     mergeGrades grades
@@ -138,7 +145,8 @@ module ScanConsumablesInCombat =
     for g in grades do
       printfn "%s,%d,Consumable use" g.Key (Convert.ToInt32 g.Value)
 
-  let scanEncounter (events: CombatLogEvent list): ConsumableUseEvent list =
+  let scanEncounter (raid: RaidState,
+                     events: CombatLogEvent list): ConsumableUseEvent list =
     let consumableUses = List<ConsumableUseEvent>()
 
     let recognizeSpellAndStoreUseEvent (sp: TargetedSpell) =
@@ -157,39 +165,64 @@ module ScanConsumablesInCombat =
           consumableUses.Add
             ({ Type = consumableClass
                TypeExplanation = explanation
-               Ability = sp.Spell
+               Ability = Some sp.Spell
                Caster = sp.Base.Caster
                Target = sp.Base.Target
                GainedOrLost = useType })
 
+    let recognizeOneTemporaryEnchantment (player: TargetType.Unit, e: Enchantment) =
+      let consClass, explanation = recognizeEnchantment e
+
+      match consClass with
+      | ConsumableClass.Skip -> ()
+      | _ ->
+          consumableUses.Add
+            ({ Type = consClass
+               Ability = Option.None
+               TypeExplanation = explanation
+               Caster = player
+               Target = player
+               GainedOrLost = Enchanted })
+
+    let rec recognizeTemporaryEnchantments (player: TargetType.Unit, gearList: GearPiece list) =
+      match gearList with
+      | [] -> ()
+      | g :: tail when g.Enchants.Length >= 2 ->
+          if g.Enchants.[1] <> Enchantment.None then
+            recognizeOneTemporaryEnchantment (player, g.Enchants.[1])
+            recognizeTemporaryEnchantments (player, tail)
+      | _ :: tail -> recognizeTemporaryEnchantments (player, tail)
+
     for ev in events do
       match ev with
+      | CombatLogEvent.CombatantInfo ci ->
+          // For COMBATANT_INFO we can extract temporary enchants up on players' weapons
+          let player = resolvePlayer(raid, ci.Player)
+          recognizeTemporaryEnchantments (player, ci.Equipment)
       | CombatLogEvent.Spell sp when sp.Base.Suffix = SpellSuffix.CastSuccess
-                                     && isPlayer sp.Base.Caster -> recognizeSpellAndStoreUseEvent sp
-
-//      | CombatLogEvent.Spell sp when sp.Base.Suffix = SpellSuffix.AuraRemoved
-//                                     && sp.Base.Prefix = SpellPrefix.Spell
-//                                     && (isPlayer sp.Base.Target || isPlayer sp.Base.Caster) ->
-//          recognizeSpellAndStoreUseEvent sp
+                                     && isPlayer sp.Base.Caster ->
+          // For SPELL_* we can track usage of consumables
+          recognizeSpellAndStoreUseEvent sp
       | _ -> ()
 
     consumableUses |> Seq.toList
 
-  let rec scan' (events: CombatLogEvent list, seq: int, accum: EncounterReport list): EncounterReport list =
+  let rec scan' (raid: RaidState, events: CombatLogEvent list, seq: int, accum: EncounterReport list)
+                : EncounterReport list =
+    let isNotEncounterEnd (ev: CombatLogEvent) =
+      match ev with
+      | CombatLogEvent.EncounterEnd _ -> false
+      | _ -> true
+
+    let isAnyEncounterEvent (ev: CombatLogEvent) =
+      match ev with
+      | CombatLogEvent.EncounterStart _ -> true
+      | CombatLogEvent.EncounterEnd _ -> true
+      | _ -> false
+
     match events with
     | [] -> accum |> List.rev
     | _ ->
-        let isNotEncounterEnd (ev: CombatLogEvent) =
-          match ev with
-          | CombatLogEvent.EncounterEnd _ -> false
-          | _ -> true
-
-        let isAnyEncounterEvent (ev: CombatLogEvent) =
-          match ev with
-          | CombatLogEvent.EncounterStart _ -> true
-          | CombatLogEvent.EncounterEnd _ -> true
-          | _ -> false
-
         let combatSection = List.takeWhile isNotEncounterEnd events
         let tail = List.skipWhile isNotEncounterEnd events
 
@@ -198,19 +231,19 @@ module ScanConsumablesInCombat =
             match List.find isAnyEncounterEvent combatSection with
             | CombatLogEvent.EncounterStart e -> Some(e)
             | CombatLogEvent.EncounterEnd e -> Some(e)
-            | _ -> None
-          with :? KeyNotFoundException -> None
+            | _ -> Option.None
+          with :? KeyNotFoundException -> Option.None
 
         eprintfn "Processing buffs for: %A" (if encounter.IsSome then sprintf "%A" encounter.Value.Boss else "None")
 
         let encounterReport =
           { Encounter = encounter
             EncounterSeq = seq
-            Consumables = scanEncounter combatSection }
+            Consumables = scanEncounter(raid, combatSection) }
 
-        scan' (tail |> List.skipWhile isAnyEncounterEvent, seq + 1, encounterReport :: accum)
+        scan' (raid, tail |> List.skipWhile isAnyEncounterEvent, seq + 1, encounterReport :: accum)
 
-  let scan (_raid: RaidState, events: CombatLogEvent list): EncounterReport list =
+  let scan (raid: RaidState, events: CombatLogEvent list): EncounterReport list =
     //    let mutable encounterSeq = 0
     //    let mutable inEncounter: Option<Encounter> = None
-    scan' (events, 1, [])
+    scan' (raid, events, 1, [])

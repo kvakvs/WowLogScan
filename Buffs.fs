@@ -2,8 +2,8 @@
 
 
 module Buffs =
-  open WowLogScan.EventLog
-
+  open CombatlogType
+  
   type WorldBuff =
     | Dragonslayer
     | Rend
@@ -112,62 +112,60 @@ module Buffs =
 
   let recognizeAura (spellId: SpellId): string * ConsumableClass =
     match spellId with
+    | SpellId 03593L -> "Elixir of the Mongoose", WeakDefensive
+    | SpellId 07844L -> "Elixir of Firepower", WeakOffensive
+    | SpellId 10668L -> "Lung Juice Cocktail", PotentDefensive
+    | SpellId 10669L -> "Ground Scorpok Assay", PotentOffensive
+    | SpellId 10692L -> "Cerebral Cortex Compound", PotentOffensive
+    | SpellId 10693L -> "Gizzard Gum", PotentOffensive
+    | SpellId 11334L -> "Elixir of Greater Agility", WeakOffensive
+    | SpellId 11349L -> "Elixir of Greater Def", WeakDefensive
+    | SpellId 11390L -> "Arcane Elixir", WeakOffensive
+    | SpellId 11405L -> "Elixir of Giants", PotentOffensive
+    | SpellId 15233L -> "Crystal Ward", WeakDefensive
+    | SpellId 15279L -> "Crystal Spire", WeakDefensive
+    | SpellId 15822L -> "Dreamless Sleep Potion", Potion
+    | SpellId 16323L -> "Juju Power", PotentOffensive
+    | SpellId 16325L -> "Juju Chill", PotentDefensive
+    | SpellId 16326L -> "Juju Ember", PotentDefensive
+    | SpellId 16329L -> "Juju Might", PotentOffensive
+    | SpellId 16609L -> "Warchief's Blessing", WorldBuff
+    | SpellId 16666L -> "Demonic Rune", Potion
+    | SpellId 17038L -> "Winterfall Firewater", PotentOffensive
+    | SpellId 17531L -> "Major Mana", Potion
+    | SpellId 17538L -> "Elixir of the Mongoose", PotentOffensive
+    | SpellId 17539L -> "Greater Arcane Elixir", PotentOffensive
     | SpellId 17628L -> "Flask of Sup", PotentFlask
-    
-    | SpellId 24425L -> "Spirit of Zandalar", WorldBuff
-    | SpellId 22888L -> "Rallying Cry of the Dragonslayer", WorldBuff
+    | SpellId 18124L -> "Blessed Sunfruit", Food
+    | SpellId 18140L -> "Blessed Sunfruit Juice", Food
+    | SpellId 18230L -> "Grilled Squid", Food
+    | SpellId 18233L -> "Nightfin Soup", Food
+    | SpellId 22731L -> "Runn Tum Tuber Surprise", Food
+    | SpellId 22789L -> "Gordok Green Grog +10 Stam", Food
+    | SpellId 22790L -> "Kreeg's Stout Beatdown +25 Spirit", Food
     | SpellId 22817L -> "Fengus' Ferocity", WorldBuff
     | SpellId 22818L -> "Mol'dar's Moxie", WorldBuff
     | SpellId 22820L -> "Slip'kik's Savvy", WorldBuff
-    | SpellId 16609L -> "Warchief's Blessing", WorldBuff
-
+    | SpellId 22888L -> "Rallying Cry of the Dragonslayer", WorldBuff
+    | SpellId 24360L -> "Greater Dreamless Sleep Potion", Potion
+    | SpellId 24361L -> "Major Troll's Blood", PotentDefensive
+    | SpellId 24363L -> "Mageblood Potion", PotentOffensive
     | SpellId 24382L -> "Spirit of Zanza", PotentOffensive
     | SpellId 24383L -> "Swiftness of Zanza", PotentDefensive
-    | SpellId 10669L -> "Ground Scorpok Assay", PotentOffensive
-    | SpellId 10693L -> "Gizzard Gum", PotentOffensive
-    | SpellId 10668L -> "Lung Juice Cocktail", PotentDefensive
-    | SpellId 10692L -> "Cerebral Cortex Compound", PotentOffensive
-
-    | SpellId 17538L -> "Elixir of the Mongoose", PotentOffensive
-    | SpellId 11334L -> "Elixir of Greater Agility", WeakOffensive
-    | SpellId 17038L -> "Winterfall Firewater", PotentOffensive
-    | SpellId 11405L -> "Elixir of Giants", PotentOffensive
-    | SpellId 17539L -> "Greater Arcane Elixir", PotentOffensive
-    | SpellId 11390L -> "Arcane Elixir", WeakOffensive
-
-    | SpellId 16323L -> "Juju Power", PotentOffensive
-    | SpellId 16329L -> "Juju Might", PotentOffensive
-    | SpellId 16325L -> "Juju Chill", PotentDefensive
-    | SpellId 16326L -> "Juju Ember", PotentDefensive
-
-    | SpellId 15233L -> "Crystal Ward", WeakDefensive
-    | SpellId 15279L -> "Crystal Spire", WeakDefensive
-
-    | SpellId 11349L -> "Elixir of Greater Def", WeakDefensive
-    | SpellId 24363L -> "Mageblood Potion", Potion
-    | SpellId 15822L -> "Dreamless Sleep Potion", Potion
-    | SpellId 24360L -> "Greater Dreamless Sleep Potion", Potion
-    | SpellId 17531L -> "Major Mana", Potion
-    | SpellId 16666L -> "Demonic Rune", Potion
+    | SpellId 24425L -> "Spirit of Zandalar", WorldBuff
+    | SpellId 26276L -> "Elixir of Greater Firepower", PotentOffensive
     | SpellId 27869L -> "Dark Rune", Potion
-    | SpellId 22731L -> "Runn Tum Tuber Surprise", Food
 
-    | SpellId 18230L -> "Grilled Squid", Food
-    | SpellId 18233L -> "Nightfin Soup", Food
-    | SpellId 18124L -> "Blessed Sunfruit", Food
-    | SpellId 18140L -> "Blessed Sunfruit Juice", Food
-    
-    | SpellId 25120L -> "Lesser Mana Oil", WeakOffensive
-    | SpellId 25121L -> "Wizard Oil", WeakOffensive
-    | SpellId 25122L -> "Brilliant Wizard Oil", PotentOffensive
-    | SpellId 25123L -> "Brilliant Mana Oil", PotentOffensive
-    
     | SpellId _other -> "", Skip
-//    | SpellId other -> (sprintf "Unknown spellid %d" other), Unknown
+
+  //------ Mana oils are removed from use buffs, and are scanned as temp enchants in COMBATANT INFO section
+  // | SpellId 25120L -> "Lesser Mana Oil", WeakOffensive
+  // | SpellId 25121L -> "Wizard Oil", WeakOffensive
+  // | SpellId 25122L -> "Brilliant Wizard Oil", PotentOffensive
+  // | SpellId 25123L -> "Brilliant Mana Oil", PotentOffensive
 
   let recognizeAbilityAsConsumable (a: Ability): string * ConsumableClass =
     match a with
-    | Ability.Spell(id, _text) -> recognizeAura id
+    | Ability.Spell (id, _text) -> recognizeAura id
     | Ability.Spell_ text -> text, Skip
     | _other -> "", Skip
-    

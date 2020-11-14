@@ -1,12 +1,14 @@
 ﻿namespace WowLogScan
 
+open WowLogScan.CombatlogType
+
 module Parser =
   open WowLogScan.Model.GearPiece
   open System
   open WowLogScan
-  open WowLogScan.CombatlogType
+  open WowLogScan.CombatlogToken
   open EventLog
-  open Model.Unit
+  open Target
 
   // 9/17 23:45:46.226  COMBATANT_INFO,
   // Player-4678-01668776,357,176,508,74,99,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,8236,0,(),(0,0,0,0),[],
@@ -184,7 +186,8 @@ module Parser =
           ItemLevel = extractInt itemParams.[1]
           Enchants =
             extractList itemParams.[2]
-            |> List.map (extractInt >> createEnchantment) }
+            |> List.map (extractInt >> createEnchantment)
+        }
     | _ -> failwithf "Error while parsing gear piece of a combatant, required list, got %A" t
 
   let parseCombatantGear (g: CLToken list): GearPiece list =

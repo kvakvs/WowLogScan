@@ -2,9 +2,9 @@
 
 module RaidState =
   open System.Collections.Generic
-  open Model.Unit
+  open TargetType
 
-  type RaidState = { Players: Dictionary<string, Unit> }
+  type RaidState = { Players: Dictionary<string, TargetType.Unit> }
 
   let resolvePlayer (raid: RaidState, u: Unit): Unit =
     match u with

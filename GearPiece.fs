@@ -1,6 +1,8 @@
 ﻿namespace WowLogScan.Model
 
+
 module GearPiece =
+  open WowLogScan.Buffs
 
   type EquipmentSlot =
     | Head
@@ -61,10 +63,9 @@ module GearPiece =
     | EquipmentSlot.OffHand
     | EquipmentSlot.Ranged -> true
     | _ -> false
-  
+
   type Enchantment =
-    | Enchant of int64 * string
-    | Unknown of int64
+    | Enchant of int64
     | None
 
   let lookupEnchantmentId (id: int64): Option<string> =
@@ -105,6 +106,7 @@ module GearPiece =
     | 1506L -> Some "+8 Strength"
     | 1508L -> Some "+8 Agility"
     | 1643L -> Some "Sharpened +8"
+    | 1664L -> Some "Rockbiter 7"
     | 1666L -> Some "Flametongue 6"
     | 1669L -> Some "Windfury 4"
     | 1704L -> Some "Thorium Spike"
@@ -168,13 +170,26 @@ module GearPiece =
         printfn "Unknown enchantmentId %A please update" id
         Option.None
 
+  let explainEnchantment (e: Enchantment): string =
+    match e with
+    | Enchant id ->
+        match lookupEnchantmentId id with
+        | Some s -> s
+        | Option.None -> "?"
+    | _ -> "?"
+
+  let recognizeEnchantment (e: Enchantment): ConsumableClass * string =
+    match e with
+    | Enchant 2623L
+    | Enchant 2625L
+    | Enchant 2626L
+    | Enchant 2627L -> (ConsumableClass.WeakOffensive, explainEnchantment e)
+    | Enchant 2628L
+    | Enchant 2629L -> (ConsumableClass.PotentOffensive, explainEnchantment e)
+    | _ -> ConsumableClass.Skip, ""
+
   let createEnchantment (id: int64): Enchantment =
-    if id = 0L then
-      Enchantment.None
-    else
-      match lookupEnchantmentId id with
-      | Some name -> Enchantment.Enchant(id, name)
-      | Option.None -> Enchantment.Unknown id
+    if id = 0L then Enchantment.None else Enchantment.Enchant id
 
   type GearPiece =
     { ItemId: int64

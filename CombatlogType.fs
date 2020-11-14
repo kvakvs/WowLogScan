@@ -1,48 +1,88 @@
 ﻿namespace WowLogScan
 
-
 module CombatlogType =
-  open System
-
-  type CLDate = CLDate of string
+  open TargetType
+  
+  type Unit = TargetType.Unit
+  
+  type SpellId = SpellId of int64
 
   type EnvDamageType = Falling
 
-  // A parsed item in combat log line: string, number or a structure
-  type CLToken =
-    | Time of DateTime
-    | EventName of string
-    | String of string
-    | UnitId of string
-    | Player of string
-    | Version of string // version string 1.13.2
-    | Int64 of int64
-    | Float of float
-    | Nil
-    | List of CLToken list
+  type Ability =
+    | Spell of SpellId * string
+    | Spell_ of string // spell with text only, is this useful?
+    | Melee
     | Environmental of EnvDamageType
 
-  type CLEvent =
-    { Time: DateTime
-      Name: string
-      Args: CLToken [] }
+  type SpellPrefix =
+    | Swing
+    | Range
+    | Spell
+    | DamageShield
+    | SpellPeriodic
+    | Environmental
+    | NotRecognizedPrefix of string
 
-  let extractString (t: CLToken): string =
-    match t with
-    | CLToken.String s -> s
-    | _ -> failwithf "String token expected, instead got %A" t
+  type SpellSuffix =
+    | Damage
+    | DamageLanded
+    | Missed
+    | DamageShield
+    | Heal
+    | HealAbsorbed
+    | Energize
+    | Drain
+    | Leech
+    | Dispel
+    | DispelFailed
+    | ExtraAttacks
+    | AuraApplied
+    | AuraRemoved
+    | AuraAppliedDose
+    | AuraRemovedDose
+    | AuraRefresh
+    | Interrupt
+    | AuraBroken
+    | AuraBrokenSpell // fear and interrupt
+    | CastStart
+    | CastSuccess
+    | CastFailed
+    | Instakill
+    | DurabilityDamage
+    | DurabilityDamageAll
+    | Create // spawn under player
+    | Summon
+    | Resurrect
+    | Absorbed
+    | NotRecognizedSuffix of string
 
-  let extractInt (t: CLToken): int64 =
-    match t with
-    | CLToken.Int64 i -> i
-    | _ -> failwithf "Int64 token expected, instead got %A" t
+  type SpellBaseParams =
+    { Prefix: SpellPrefix
+      Suffix: SpellSuffix
+      Caster: Unit
+      Target: Unit }
 
-  let extractFloat (t: CLToken): float =
-    match t with
-    | CLToken.Float f -> f
-    | _ -> failwithf "Float token expected, instead got %A" t
+  type Power =
+    | Mana
+    | Rage
+    | Focus
+    | Energy
+    | Combo
+    | Other
 
-  let extractList (t: CLToken): CLToken list =
-    match t with
-    | CLToken.List t -> t
-    | _ -> failwithf "CLToken.List token expected, instead got %A" t
+  type Energize =
+    { Amount: float
+      OverEnergize: float
+      PowerType: Power }
+
+  type BuffDebuff =
+    | Buff
+    | Debuff
+    | Neither
+
+  type TargetedSpell =
+    { Base: SpellBaseParams
+      Spell: Ability
+      IsBuff: BuffDebuff
+      Energize: Option<Energize> }

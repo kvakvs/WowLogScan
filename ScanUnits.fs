@@ -2,19 +2,20 @@
 
 
 module ScanUnits =
-  open WowLogScan.CombatlogType
+  open WowLogScan.CombatlogToken
   open System.Collections.Generic
   open RaidState
-  open Model.Unit
+  open Target
 
-  let updateDict (players: Dictionary<string, Unit>, v: CLToken []) =
-    match unitFromToken v.[1] with
-    | Unit.PlayerId p when players.ContainsKey(p) = false -> players.Add(p, unitFromToken v.[2])
+  let updateDict (players: Dictionary<string, TargetType.Unit>, v: CLToken []) =
+    match Target.unitFromToken v.[1] with
+    | TargetType.Unit.PlayerId p when players.ContainsKey(p) = false ->
+      players.Add(p, Target.unitFromToken v.[2])
     | _ -> ()
 
   // Go through the event log and try map some unit GUIDs to names
   let scanUnits (logLines: CLEvent list): RaidState =
-    let players = Dictionary<string, Unit>()
+    let players = Dictionary<string, TargetType.Unit>()
 
     for line in logLines do
       let v = line.Args

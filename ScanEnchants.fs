@@ -4,7 +4,7 @@ module ScanEnchants =
   open System
   open System.Collections.Generic
   open WowLogScan.Model.GearPiece
-  open WowLogScan.Model.Unit
+  open Target
   open Microsoft.FSharp.Collections
   open EventLog
   open RaidState
@@ -13,7 +13,7 @@ module ScanEnchants =
   type AllEquipmentBySlot = Dictionary<EquipmentSlot, PlayerItemsPerSlot>
 
   type EnchantReportItem =
-    { Player: Unit
+    { Player: TargetType.Unit
       Gear: AllEquipmentBySlot }
 
   let printReport (e: EnchantReportItem): string =

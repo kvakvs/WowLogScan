@@ -1,16 +1,9 @@
-﻿namespace WowLogScan.Model
+﻿namespace WowLogScan
 
-
-module Unit =
-  open WowLogScan.CombatlogType
+module Target =
+  open WowLogScan.CombatlogToken
+  open TargetType
   
-  type Unit =
-    | Player of string // player name, not id
-    | PlayerId of string // player unit id, not name
-    | Npc of string
-    | Pet of string
-    | NoTarget
-
   let REALM_NAME = @"HydraxianWaterlords"
 
   let createUnit (s: string): Unit =

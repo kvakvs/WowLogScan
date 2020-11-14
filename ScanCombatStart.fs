@@ -1,11 +1,11 @@
 ﻿namespace WowLogScan
 
 module ScanCombatStart =
-  open Model.Unit
   open WowLogScan
   open WowLogScan.Buffs
   open WowLogScan.RaidState
   open EventLog
+  open CombatlogType
 
   let printScoringRules =
     printfn "## Non-trash encounters can grant fractions of EP up to the maximum of 1 EP"

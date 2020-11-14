@@ -4,9 +4,10 @@ open System.Globalization
 
 
 module CombatlogSyntax =
+  open CombatlogType
   open System
   open FParsec
-  open CombatlogType
+  open CombatlogToken
 
   let REALM_NAME = @"HydraxianWaterlords"
 
