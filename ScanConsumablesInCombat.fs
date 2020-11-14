@@ -29,6 +29,8 @@ module ScanConsumablesInCombat =
       EncounterSeq: int
       Consumables: ConsumableUseEvent list }
 
+  type ScoreMap = Dictionary<string, float>
+
   let isPlayer (u: Unit): bool =
     match u with
     | TargetType.Player _ -> true
@@ -56,17 +58,15 @@ module ScanConsumablesInCombat =
       for row in er.Consumables do
         printReportRow row
 
-  type PlayerEPScores = Dictionary<string, float>
-
-  let writeKeyOnce (dict: PlayerEPScores, key: string, value: float) =
+  let writeKeyOnce (dict: ScoreMap, key: string, value: float) =
     if dict.ContainsKey key then () else dict.Add(key, value)
 
-  let replaceKey (dict: PlayerEPScores, key: string, value: float) =
+  let replaceKey (dict: ScoreMap, key: string, value: float) =
     if dict.ContainsKey key then (dict.Remove key) |> ignore
     dict.Add(key, value)
 
-  let mergeGrades (inputs: PlayerEPScores list): PlayerEPScores =
-    let grades = PlayerEPScores()
+  let addScores (inputs: ScoreMap list): ScoreMap =
+    let grades = ScoreMap()
 
     for inp in inputs do
       for entry in inp do
@@ -76,20 +76,20 @@ module ScanConsumablesInCombat =
 
     grades
 
-  let capGradesAt (input: PlayerEPScores, cap: float): PlayerEPScores =
-    let result = PlayerEPScores()
+  let clampAllValuesAt (input: ScoreMap, cap: float): ScoreMap =
+    let result = ScoreMap()
 
     for item in input do
       result.Add(item.Key, Math.Min(item.Value, cap))
 
     result
 
-  let gradeEncounterEP (e: EncounterReport): PlayerEPScores =
-    let strongOffensive = PlayerEPScores()
-    let weakOffensive = PlayerEPScores()
-    let weakFlask = PlayerEPScores()
-    let potentFlask = PlayerEPScores()
-    let potion = PlayerEPScores()
+  let gradeEncounterEP (e: EncounterReport): ScoreMap =
+    let strongOffensive = ScoreMap()
+    let weakOffensive = ScoreMap()
+    let weakFlask = ScoreMap()
+    let potentFlask = ScoreMap()
+    let potion = ScoreMap()
 
     for useEvent in e.Consumables do
       let playerName =
@@ -103,19 +103,20 @@ module ScanConsumablesInCombat =
       | ConsumableClass.PotentDefensive -> writeKeyOnce (strongOffensive, playerName, 0.5)
       | ConsumableClass.WeakDefensive -> writeKeyOnce (weakOffensive, playerName, 0.25)
       | ConsumableClass.Potion -> writeKeyOnce (potion, playerName, 0.5)
+      | ConsumableClass.Food -> writeKeyOnce (potion, playerName, 0.25)
       | _ -> ()
 
 
     let merged =
-      mergeGrades [ potentFlask
-                    weakFlask
-                    strongOffensive
-                    weakOffensive
-                    potion ]
+      addScores [ potentFlask
+                  weakFlask
+                  strongOffensive
+                  weakOffensive
+                  potion ]
 
-    capGradesAt (merged, 1.0)
+    clampAllValuesAt (merged, 1.0)
 
-  let gradeAllEncountersEP (allEncounters: EncounterReport list): PlayerEPScores =
+  let gradeAllEncountersEP (allEncounters: EncounterReport list): ScoreMap =
     // Filter out trash, and grade every encounter
     let encounters =
       allEncounters
@@ -133,7 +134,7 @@ module ScanConsumablesInCombat =
 
       printfn ""
 
-    mergeGrades grades
+    addScores grades
 
   let printEffortPoints (allEncounters: EncounterReport list) =
     printfn ""
