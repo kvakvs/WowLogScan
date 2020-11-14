@@ -85,11 +85,14 @@ module ScanConsumablesInCombat =
     result
 
   let gradeEncounterEP (e: EncounterReport): ScoreMap =
-    let strongOffensive = ScoreMap()
+    let potentOffensive = ScoreMap()
     let weakOffensive = ScoreMap()
+    let potentDefensive = ScoreMap()
+    let weakDefensive = ScoreMap()
     let weakFlask = ScoreMap()
     let potentFlask = ScoreMap()
     let potion = ScoreMap()
+    let food = ScoreMap()
 
     for useEvent in e.Consumables do
       let playerName =
@@ -98,21 +101,24 @@ module ScanConsumablesInCombat =
       match useEvent.Type with
       | ConsumableClass.PotentFlask when useEvent.GainedOrLost = Gained -> writeKeyOnce (potentFlask, playerName, 1.0)
       | ConsumableClass.WeakFlask -> writeKeyOnce (weakFlask, playerName, 1.0)
-      | ConsumableClass.PotentOffensive -> writeKeyOnce (strongOffensive, playerName, 1.0)
+      | ConsumableClass.PotentOffensive -> writeKeyOnce (potentOffensive, playerName, 1.0)
       | ConsumableClass.WeakOffensive -> writeKeyOnce (weakOffensive, playerName, 0.5)
-      | ConsumableClass.PotentDefensive -> writeKeyOnce (strongOffensive, playerName, 0.5)
-      | ConsumableClass.WeakDefensive -> writeKeyOnce (weakOffensive, playerName, 0.25)
+      | ConsumableClass.PotentDefensive -> writeKeyOnce (potentDefensive, playerName, 0.5)
+      | ConsumableClass.WeakDefensive -> writeKeyOnce (weakDefensive, playerName, 0.25)
       | ConsumableClass.Potion -> writeKeyOnce (potion, playerName, 0.5)
-      | ConsumableClass.Food -> writeKeyOnce (potion, playerName, 0.25)
+      | ConsumableClass.Food -> writeKeyOnce (food, playerName, 0.25)
       | _ -> ()
 
 
     let merged =
       addScores [ potentFlask
                   weakFlask
-                  strongOffensive
+                  potentOffensive
                   weakOffensive
-                  potion ]
+                  potentDefensive
+                  weakDefensive
+                  potion
+                  food ]
 
     clampAllValuesAt (merged, 1.0)
 
@@ -188,10 +194,10 @@ module ScanConsumablesInCombat =
     let rec recognizeTemporaryEnchantments (player: TargetType.Unit, gearList: GearPiece list) =
       match gearList with
       | [] -> ()
-      | g :: tail when g.Enchants.Length >= 2 ->
-          if g.Enchants.[1] <> Enchantment.None then
-            recognizeOneTemporaryEnchantment (player, g.Enchants.[1])
-            recognizeTemporaryEnchantments (player, tail)
+      | g :: tail when g.Enchants.Length = 3 ->
+          for e in g.Enchants do
+            recognizeOneTemporaryEnchantment (player, e)
+          recognizeTemporaryEnchantments (player, tail)
       | _ :: tail -> recognizeTemporaryEnchantments (player, tail)
 
     for ev in events do

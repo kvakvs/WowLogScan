@@ -179,18 +179,20 @@ module GearPiece =
     | _ -> "?"
 
   let recognizeEnchantment (e: Enchantment): ConsumableClass * string =
-    match e with
-    | Enchant 1643L // Sharpened +8
-    | Enchant 2623L // Minor Wiz Oil
-    | Enchant 2625L // Lesser Mana Oil
-    | Enchant 2626L // Lesser Wiz Oil
-    | Enchant 2627L -> // Wiz Oil
-      (ConsumableClass.WeakOffensive, explainEnchantment e)
-    | Enchant 2506L // Sharpened +2% Crit
-    | Enchant 2628L // Bril Wiz Oil
-    | Enchant 2629L -> // Bril Mana Oil
-      (ConsumableClass.PotentOffensive, explainEnchantment e)
-    | _ -> ConsumableClass.Skip, ""
+    let classedAs =
+      match e with
+      | Enchant 1643L -> WeakOffensive // Sharpened +8
+      | Enchant 2623L -> WeakOffensive // Minor Wiz Oil
+      | Enchant 2624L -> WeakOffensive // Minor Mana Oil
+      | Enchant 2625L -> WeakOffensive // Lesser Mana Oil
+      | Enchant 2626L -> WeakOffensive // Lesser Wiz Oil
+      | Enchant 2627L -> WeakOffensive // Wiz Oil
+      | Enchant 2506L -> PotentOffensive // Sharpened +2% Crit
+      | Enchant 2628L -> PotentOffensive // Bril Wiz Oil
+      | Enchant 2629L -> PotentOffensive // Bril Mana Oil
+      | _ -> ConsumableClass.Skip
+
+    classedAs, (explainEnchantment e)
 
   let createEnchantment (id: int64): Enchantment =
     if id = 0L then Enchantment.None else Enchantment.Enchant id

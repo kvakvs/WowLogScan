@@ -131,7 +131,9 @@ module Parser =
 
     let who = unitFromToken v.[2]
     // 'Target' can be same as 'who' if unit ids match
-    let target = if v.[1] = v.[5] then who else unitFromToken v.[6]
+    let target =
+      if v.[1] = v.[5] then who else unitFromToken v.[6]
+
     { Prefix = prefix
       Suffix = suffix
       Caster = who
@@ -181,13 +183,14 @@ module Parser =
   let parseGearPiece (t: CLToken, slotId: int): GearPiece =
     match t with
     | CLToken.List itemParams ->
+        let enchantments =
+          extractList itemParams.[2]
+          |> List.map (extractInt >> createEnchantment)
+          
         { SlotId = createEquipmentSlot slotId
           ItemId = extractInt itemParams.[0]
           ItemLevel = extractInt itemParams.[1]
-          Enchants =
-            extractList itemParams.[2]
-            |> List.map (extractInt >> createEnchantment)
-        }
+          Enchants = enchantments }
     | _ -> failwithf "Error while parsing gear piece of a combatant, required list, got %A" t
 
   let parseCombatantGear (g: CLToken list): GearPiece list =

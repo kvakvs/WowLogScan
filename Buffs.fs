@@ -112,6 +112,7 @@ module Buffs =
 
   let recognizeAura (spellId: SpellId): string * ConsumableClass =
     match spellId with
+    | SpellId 03223L -> "Mighty Troll's Blood", WeakDefensive
     | SpellId 03593L -> "Elixir of the Mongoose", WeakDefensive
     | SpellId 07844L -> "Elixir of Firepower", WeakOffensive
     | SpellId 10668L -> "Lung Juice Cocktail", PotentDefensive
