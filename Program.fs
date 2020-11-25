@@ -41,7 +41,8 @@ module Main =
         match wb.Key with
         | TargetType.Player p ->
             let effortScore = EffortScore.scoreWorldBuffs (wb.Value)
-            printfn "%s,%d,Worldbuff" p effortScore 
+            if effortScore > 0 then
+              printfn "%s,%d,Worldbuff" p effortScore 
         | _ -> ()
 
     if false then

@@ -3,7 +3,6 @@
 module ScanBuffs =
   open System.Collections.Generic
   open WowLogScan.EventLog
-  open Target
   open CombatlogType
   open Buffs
   open RaidState

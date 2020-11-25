@@ -15,7 +15,7 @@ module ScanConsumablesInCombat =
     | Lost
     | Enchanted
     | Used
-  
+
   type ConsumableUseEvent =
     { Type: ConsumableClass
       TypeExplanation: string
@@ -43,12 +43,12 @@ module ScanConsumablesInCombat =
     | Option.None -> "<trash>"
 
   let printReportRow (c: ConsumableUseEvent) =
-    let explainAbility(a: Option<Ability>): string =
+    let explainAbility (a: Option<Ability>): string =
       match a with
-      | Some(Ability.Spell(spellId, name)) -> sprintf "%A %s (%s)" spellId name c.TypeExplanation
+      | Some (Ability.Spell (spellId, name)) -> sprintf "%A %s (%s)" spellId name c.TypeExplanation
       | Some a -> sprintf "%A (%s)" a c.TypeExplanation
       | Option.None -> c.TypeExplanation
-      
+
     printfn "  %A → %A → %s (%A)" c.Caster c.GainedOrLost (explainAbility c.Ability) c.Type
 
   let printReport (allEncounters: EncounterReport list) =
@@ -58,8 +58,13 @@ module ScanConsumablesInCombat =
       for row in er.Consumables do
         printReportRow row
 
-  let writeKeyOnce (dict: ScoreMap, key: string, value: float) =
-    if dict.ContainsKey key then () else dict.Add(key, value)
+  let addScore (dict: ScoreMap, key: string, value: float) =
+    if dict.ContainsKey key then
+      let oldValue = dict.[key]
+      (dict.Remove key) |> ignore
+      dict.Add(key, value + oldValue)
+    else
+      dict.Add(key, value)
 
   let replaceKey (dict: ScoreMap, key: string, value: float) =
     if dict.ContainsKey key then (dict.Remove key) |> ignore
@@ -99,29 +104,28 @@ module ScanConsumablesInCombat =
         if isPlayer useEvent.Caster then Target.playerName useEvent.Caster else Target.playerName useEvent.Target
 
       match useEvent.Type with
-      | ConsumableClass.PotentFlask when useEvent.GainedOrLost = Gained -> writeKeyOnce (potentFlask, playerName, 1.0)
-      | ConsumableClass.WeakFlask -> writeKeyOnce (weakFlask, playerName, 1.0)
-      | ConsumableClass.PotentOffensive -> writeKeyOnce (potentOffensive, playerName, 1.0)
-      | ConsumableClass.WeakOffensive -> writeKeyOnce (weakOffensive, playerName, 0.5)
-      | ConsumableClass.PotentDefensive -> writeKeyOnce (potentDefensive, playerName, 0.5)
-      | ConsumableClass.WeakDefensive -> writeKeyOnce (weakDefensive, playerName, 0.25)
-      | ConsumableClass.Potion -> writeKeyOnce (potion, playerName, 0.5)
-      | ConsumableClass.Food -> writeKeyOnce (food, playerName, 0.25)
+      | ConsumableClass.PotentFlask when useEvent.GainedOrLost = Gained -> addScore (potentFlask, playerName, 1.0)
+      | ConsumableClass.WeakFlask -> addScore (weakFlask, playerName, 1.0)
+      | ConsumableClass.PotentOffensive -> addScore (potentOffensive, playerName, 1.0)
+      | ConsumableClass.WeakOffensive -> addScore (weakOffensive, playerName, 0.5)
+      | ConsumableClass.PotentDefensive -> addScore (potentDefensive, playerName, 0.5)
+      | ConsumableClass.WeakDefensive -> addScore (weakDefensive, playerName, 0.25)
+      | ConsumableClass.Potion -> addScore (potion, playerName, 0.5)
+      | ConsumableClass.Food -> addScore (food, playerName, 0.25)
       | _ -> ()
 
 
-    let merged =
-      addScores [ potentFlask
-                  weakFlask
-                  potentOffensive
-                  weakOffensive
-                  potentDefensive
-                  weakDefensive
-                  potion
-                  food ]
+    addScores [ potentFlask
+                weakFlask
+                potentOffensive
+                weakOffensive
+                potentDefensive
+                weakDefensive
+                potion
+                food ]
 
-    clampAllValuesAt (merged, 1.0)
-
+  let scoreCap = 1.0
+  
   let gradeAllEncountersEP (allEncounters: EncounterReport list): ScoreMap =
     // Filter out trash, and grade every encounter
     let encounters =
@@ -129,31 +133,35 @@ module ScanConsumablesInCombat =
       |> List.filter (fun e -> e.Encounter.IsSome)
 
     let grades = encounters |> List.map gradeEncounterEP
+    let cap1Grades = grades |> List.map (fun g -> clampAllValuesAt(g, scoreCap))
 
     let encounterGradePairs = List.zip encounters grades
 
     for (e, g) in encounterGradePairs do
-      printfn "Details for %A:" e.Encounter.Value.Boss
+      printfn "Details for %A (uncapped, cap is %f):" e.Encounter.Value.Boss scoreCap
 
       for i in g do
         printf "%A; " i
 
       printfn ""
 
-    addScores grades
+    addScores cap1Grades
 
   let printEffortPoints (allEncounters: EncounterReport list) =
     printfn ""
     printfn "## EP Grades"
+    printfn "## Rules: Consumables give fraction of EP per encounter."
+    printfn "##   Encounters of trash are merged with the following boss"
+    printfn "##   EP is capped at 1 per boss encounter"
     printfn ""
 
     let grades = gradeAllEncountersEP allEncounters
 
     for g in grades do
-      printfn "%s,%d,Consumable use" g.Key (Convert.ToInt32 g.Value)
+      if g.Value > 0.0 then
+        printfn "%s,%d,Consumes" g.Key (Convert.ToInt32 g.Value)
 
-  let scanEncounter (raid: RaidState,
-                     events: CombatLogEvent list): ConsumableUseEvent list =
+  let scanEncounter (raid: RaidState, events: CombatLogEvent list): ConsumableUseEvent list =
     let consumableUses = List<ConsumableUseEvent>()
 
     let recognizeSpellAndStoreUseEvent (sp: TargetedSpell) =
@@ -197,6 +205,7 @@ module ScanConsumablesInCombat =
       | g :: tail when g.Enchants.Length = 3 ->
           for e in g.Enchants do
             recognizeOneTemporaryEnchantment (player, e)
+
           recognizeTemporaryEnchantments (player, tail)
       | _ :: tail -> recognizeTemporaryEnchantments (player, tail)
 
@@ -204,7 +213,7 @@ module ScanConsumablesInCombat =
       match ev with
       | CombatLogEvent.CombatantInfo ci ->
           // For COMBATANT_INFO we can extract temporary enchants up on players' weapons
-          let player = resolvePlayer(raid, ci.Player)
+          let player = resolvePlayer (raid, ci.Player)
           recognizeTemporaryEnchantments (player, ci.Equipment)
       | CombatLogEvent.Spell sp when sp.Base.Suffix = SpellSuffix.CastSuccess
                                      && isPlayer sp.Base.Caster ->
@@ -246,7 +255,7 @@ module ScanConsumablesInCombat =
         let encounterReport =
           { Encounter = encounter
             EncounterSeq = seq
-            Consumables = scanEncounter(raid, combatSection) }
+            Consumables = scanEncounter (raid, combatSection) }
 
         scan' (raid, tail |> List.skipWhile isAnyEncounterEvent, seq + 1, encounterReport :: accum)
 
