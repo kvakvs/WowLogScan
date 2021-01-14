@@ -54,6 +54,7 @@
         </Reference>
     </ItemGroup>
     <ItemGroup>
+        <Compile Include="ProgramState.fs" />
         <Compile Include="AssemblyInfo.fs" />
         <Compile Include="TargetType.fs" />
         <Compile Include="CombatlogType.fs" />

@@ -84,6 +84,7 @@ module GearPiece =
     | 643L -> Some "Mind Numbing Poison 3"
     | 664L -> Some "+7 Scope"
     | 804L -> Some "+10 Shadow Res"
+    | 805L -> Some "+4 Weapon Damage"
     | 849L -> Some "+3 Agility"
     | 850L -> Some "+35 Health"
     | 851L -> Some "+5 Spirit"
@@ -130,6 +131,7 @@ module GearPiece =
     | 2483L -> Some "+5 Fire Res"
     | 2486L -> Some "+5 Nature Res"
     | 2487L -> Some "+5 Shadow Res"
+    | 2488L -> Some "+5 All Res"
     | 2504L -> Some "+30 Spell"
     | 2505L -> Some "+29 Spell"
     | 2506L -> Some "Sharpened +2% Crit"
@@ -168,6 +170,8 @@ module GearPiece =
     | 2628L -> Some "Brilliant Wizard Oil"
     | 2629L -> Some "Brilliant Mana Oil"
     | 2646L -> Some "+25 Agility"
+    | 2684L -> Some "+100 AP vs Undead"
+    | 2685L -> Some "+60 Spell vs Undead"
     | _ ->
         printfn "Unknown enchantmentId %A please update" id
         Option.None

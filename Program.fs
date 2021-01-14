@@ -1,9 +1,10 @@
 ﻿namespace WowLogScan
 
+open WowLogScan.ProgramState
+
 module Main =
   open FParsec
   open WowLogScan
-  open Target
   open EventLog
   open ScanUnits
 
@@ -29,8 +30,9 @@ module Main =
       printfn "# The scoring rules: "
       ScanBuffs.printScoringRules
       printfn ""
-      
+
       let worldBuffsReport = ScanBuffs.scanWorldBuffs (raid, events)
+
       for wb in worldBuffsReport do
         match wb.Key with
         | TargetType.Player p -> printfn "%A %A" p wb.Value
@@ -41,8 +43,7 @@ module Main =
         match wb.Key with
         | TargetType.Player p ->
             let effortScore = EffortScore.scoreWorldBuffs (wb.Value)
-            if effortScore > 0 then
-              printfn "%s,%d,Worldbuff" p effortScore 
+            if effortScore > 0 then printfn "%s,%d,Worldbuff" p effortScore
         | _ -> ()
 
     if false then
@@ -50,19 +51,24 @@ module Main =
       printfn "# ENCOUNTER START BUFFS ---"
       printfn "# List recognized consumable effects up on the combatants when an encounter starts"
       printfn "# The scoring rules: "
-      
+
       ScanCombatStart.printScoringRules
       printfn ""
+
       let combatantBuffReport = ScanCombatStart.scan (raid, events)
+
       for cr in combatantBuffReport do
-        ScanCombatStart.printReport(raid, cr)
+        ScanCombatStart.printReport (raid, cr)
 
     if true then
       printfn ""
       printfn "# CONSUMABLES IN COMBAT (raid prep) ---"
       printfn "# List recognized consumable effects used throughout the raid"
       printfn ""
-      let consumReport = ScanConsumablesInCombat.scan (raid, events)
+
+      let consumReport =
+        ScanConsumablesInCombat.scan (raid, events)
+
       ScanConsumablesInCombat.printReport consumReport
       ScanConsumablesInCombat.printEffortPoints consumReport
 
@@ -72,15 +78,19 @@ module Main =
       printfn "# Listed are all unique items used by players in the raid, with permanent enchants"
       printfn "# Temporary enchant data like oils, poisons and totem effects is available but not analyzed"
       printfn ""
+
       let enchantsReport = ScanEnchants.scanEnchants (raid, events)
+
       for er in enchantsReport do
         printfn "%s" (ScanEnchants.printReport er)
 
   [<EntryPoint>]
   let main (argv: string []): int =
     let filename = argv.[0]
+    Global.RealmName <- argv.[1]
 
     match CharParsers.runParserOnFile CombatlogSyntax.combatLogEventList () filename System.Text.Encoding.UTF8 with
     | Success (parsedList, _, _) -> handleParsedList parsedList |> ignore
     | Failure (err, _, _) -> printfn "Fail: %s" err
+
     0

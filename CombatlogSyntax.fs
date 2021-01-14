@@ -1,6 +1,7 @@
 ﻿namespace WowLogScan
 
 open System.Globalization
+open WowLogScan.ProgramState
 
 
 module CombatlogSyntax =
@@ -8,8 +9,6 @@ module CombatlogSyntax =
   open System
   open FParsec
   open CombatlogToken
-
-  let REALM_NAME = @"HydraxianWaterlords"
 
   type ParserState = unit
   type P<'T> = Parser<'T, ParserState>
@@ -44,7 +43,7 @@ module CombatlogSyntax =
 
   let quotedString: P<CLToken> =
     let makeStringOrPlayer (s: string) =
-      if s.EndsWith(REALM_NAME) then
+      if s.EndsWith(Global.RealmName) then
         let name = (s.Split '-').[0]
         CLToken.Player name
       else
